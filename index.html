@@ -16,10 +16,15 @@
   </head>
   <body>
     <!-- Toast Notifications -->
-    <div id="toast-container"></div>
+    <div id="toast-container" role="status" aria-live="polite"></div>
 
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+    <aside
+      class="sidebar"
+      id="sidebar"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div class="sidebar-brand">
         <i class="fa-solid fa-book-open"></i>
         <span>Bibliotheca</span>
@@ -39,19 +44,30 @@
         </button>
         <button class="nav-item" data-tab="overdue">
           <i class="fa-solid fa-triangle-exclamation"></i> Overdue
-          <span class="badge" id="overdue-badge">0</span>
+          <span
+            class="badge"
+            id="overdue-badge"
+            style="display: none"
+            aria-hidden="true"
+          ></span>
         </button>
       </nav>
       <div class="sidebar-footer">
-        <button class="export-btn" id="open-export-modal">
+        <button
+          class="export-btn"
+          id="open-export-modal"
+          aria-label="Export data"
+        >
           <i class="fa-solid fa-file-export"></i> Export Data
         </button>
       </div>
     </aside>
 
     <!-- Mobile Header -->
-    <header class="mobile-header">
-      <button id="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+    <header class="mobile-header" role="banner">
+      <button id="menu-toggle" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
       <span class="mobile-brand"
         ><i class="fa-solid fa-book-open"></i> Bibliotheca</span
       >
@@ -133,7 +149,11 @@
       <section class="tab-section" id="tab-books">
         <div class="page-header">
           <h1>Books</h1>
-          <button class="btn btn-primary" id="open-add-book">
+          <button
+            class="btn btn-primary"
+            id="open-add-book"
+            aria-label="Add book"
+          >
             <i class="fa-solid fa-plus"></i> Add Book
           </button>
         </div>
@@ -145,9 +165,14 @@
               type="text"
               id="book-search"
               placeholder="Search by title, author or ISBN…"
+              aria-label="Search books"
             />
           </div>
-          <select id="genre-filter" class="select-filter">
+          <select
+            id="genre-filter"
+            class="select-filter"
+            aria-label="Filter by genre"
+          >
             <option value="">All Genres</option>
             <option value="Fiction">Fiction</option>
             <option value="Non-Fiction">Non-Fiction</option>
@@ -170,7 +195,11 @@
       <section class="tab-section" id="tab-members">
         <div class="page-header">
           <h1>Members</h1>
-          <button class="btn btn-primary" id="open-add-member">
+          <button
+            class="btn btn-primary"
+            id="open-add-member"
+            aria-label="Add member"
+          >
             <i class="fa-solid fa-user-plus"></i> Add Member
           </button>
         </div>
@@ -182,6 +211,7 @@
               type="text"
               id="member-search"
               placeholder="Search by name, ID or email…"
+              aria-label="Search members"
             />
           </div>
           <button
@@ -214,7 +244,11 @@
       <section class="tab-section" id="tab-borrowing">
         <div class="page-header">
           <h1>Borrowing</h1>
-          <button class="btn btn-primary" id="open-borrow-modal">
+          <button
+            class="btn btn-primary"
+            id="open-borrow-modal"
+            aria-label="Borrow book"
+          >
             <i class="fa-solid fa-hand-holding-heart"></i> Borrow Book
           </button>
         </div>
@@ -226,6 +260,7 @@
               type="text"
               id="borrow-search"
               placeholder="Search by member or book title…"
+              aria-label="Search transactions"
             />
           </div>
           <button
@@ -284,7 +319,11 @@
       <div class="modal">
         <div class="modal-header">
           <h2 id="book-modal-title">Add New Book</h2>
-          <button class="modal-close" data-close="book-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="book-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -366,7 +405,11 @@
       <div class="modal">
         <div class="modal-header">
           <h2 id="member-modal-title">Add New Member</h2>
-          <button class="modal-close" data-close="member-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="member-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -423,7 +466,11 @@
       <div class="modal">
         <div class="modal-header">
           <h2>Borrow a Book</h2>
-          <button class="modal-close" data-close="borrow-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="borrow-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -461,7 +508,11 @@
       <div class="modal">
         <div class="modal-header">
           <h2>Return Book</h2>
-          <button class="modal-close" data-close="return-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="return-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -485,7 +536,11 @@
       <div class="modal">
         <div class="modal-header">
           <h2>Renew Book</h2>
-          <button class="modal-close" data-close="renew-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="renew-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -509,7 +564,11 @@
       <div class="modal modal-wide">
         <div class="modal-header">
           <h2 id="history-modal-title">Borrow History</h2>
-          <button class="modal-close" data-close="history-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="history-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -529,7 +588,11 @@
       <div class="modal modal-sm">
         <div class="modal-header">
           <h2>Export Data</h2>
-          <button class="modal-close" data-close="export-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="export-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -573,7 +636,11 @@
       <div class="modal modal-sm">
         <div class="modal-header danger-header">
           <h2><i class="fa-solid fa-trash"></i> Confirm Delete</h2>
-          <button class="modal-close" data-close="confirm-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="confirm-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -596,7 +663,11 @@
       <div class="modal">
         <div class="modal-header">
           <h2><i class="fa-solid fa-receipt"></i> Borrowing Receipt</h2>
-          <button class="modal-close" data-close="receipt-modal">
+          <button
+            class="modal-close"
+            aria-label="Close dialog"
+            data-close="receipt-modal"
+          >
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>

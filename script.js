@@ -1,1392 +1,301 @@
-/**
- * BIBLIOTHECA — Library Management System
- * ES6+ Classes: Book, Member, Transaction, LibraryManager
- */
+(function(){'use strict';let d=data();function data(){let r=localStorage.getItem('q');if(!r||!(JSON.parse(r).books)){let n=['English','Literature','Science','Mathematics','History','Technology','Art','Philosophy'];let a=(i,s)=>n[i%8];let l=(i)=>({id:i+1,title:`Book Title ${i+1}`,author:`Author ${i+1}`,isbn:`978-${String(i+1).padStart(7,'0')}`,genre:a(i),qty:Math.floor(Math.random()*5)+1,year:2015+Math.floor(Math.random()*10)});let b=Array.from({length:40},(_,i)=>l(i));let m=Array.from({length:20},(_,i)=>({id:i+1,name:`Member ${i+1}`,email:`member${i+1}@mail.com`,phone:`0${String(555+Math.floor(Math.random()*444)).padStart(10,'0')}`,joined:new Date(2020+Math.floor(Math.random()*5),Math.floor(Math.random()*12),Math.floor(Math.random()*28)+1).toISOString().slice(0,10)}));let t=Array.from({length:30},(_,i)=>{let bk=b[Math.floor(Math.random()*b.length)];let mb=m[Math.floor(Math.random()*m.length)];let d1=new Date(2024,Math.floor(Math.random()*8),Math.floor(Math.random()*28)+1);let d2=new Date(d1);d2.setDate(d2.getDate()+14+Math.floor(Math.random()*14));return{id:i+1,bookTitle:bk.title,memberName:mb.name,borrowDate:d1.toISOString().slice(0,10),dueDate:d2.toISOString().slice(0,10),returnDate:Math.random()>0.3?function(){let r=new Date(d2);r.setDate(r.getDate()+Math.floor(Math.random()*5)-2);return r.toISOString().slice(0,10)}():null,renewCount:Math.floor(Math.random()*2)}});let rv={books:b,members:m,transactions:t};localStorage.setItem('q',JSON.stringify(rv));return rv}else{return JSON.parse(r)}}
+function sv(){localStorage.setItem('q',JSON.stringify(d))}
+function id(){return Math.max(...d.books.map(b=>b.id),...d.members.map(m=>m.id),...d.transactions.map(t=>t.id),0)+1}
 
-"use strict";
+let cv='dashboard';let cp={books:1,members:1,borrowing:1,overdue:1};let pp=10;let memberPage=1;let cs={books:{col:'',dir:''},borrowing:{col:'',dir:''},members:{col:'',dir:''},overdue:{col:'',dir:''}};let is=0;
 
-// ============================================================
-// UTILITY HELPERS
-// ============================================================
+let $=s=>document.querySelector(s);let $$=s=>document.querySelectorAll(s);let vv=s=>document.getElementById('view-'+s);
 
-/** Format a date string to a readable local format */
-function formatDate(dateStr) {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+function toast(m,t){let p=$('#toast-pool');let e=document.createElement('div');e.className='toast '+t;e.innerHTML=(t=='info'?'<i class="fa-solid fa-circle-info"></i>':t=='s'?'<i class="fa-solid fa-circle-check"></i>':t=='e'?'<i class="fa-solid fa-circle-exclamation"></i>':'<i class="fa-solid fa-triangle-exclamation"></i>')+m;p.appendChild(e);setTimeout(()=>{e.style.animation='so .25s ease forwards';setTimeout(()=>e.remove(),260)},3000)}
+
+function esc(e){e&&e.preventDefault();$('#modal-root').hidden=true;$('#modal-bg').onclick=null;document.body.classList.remove('mo')}
+
+function gen(n){return n>0?'<span class="genre">'+n+'</span>':''}
+
+function navView(v){Object.values(cs).forEach(s=>{s.col='';s.dir=''});cv=v;$$('.tb-btn').forEach(b=>b.classList.toggle('active',b.dataset.view==v));$$('.view').forEach(x=>x.classList.toggle('active',x.id=='view-'+v));render(v)}
+
+function processBorrowData(bk,id){let view=vv('borrowing');let f=view.querySelector('#f-borrow-book');if(bk){f.value=bk.title}let mi=view.querySelector('#f-borrow-member');if(id){mi.value=id}}
+
+function confirmDel(msg,cb){$('#modal-title').textContent='Confirm';$('#modal-bd').innerHTML='<p style="font-size:0.88rem;color:var(--t2)">'+msg+'</p>';$('#modal-ft').innerHTML='<button class="btn btn-g" data-act="cancel">Cancel</button><button class="btn btn-d" data-act="confirm" data-cb="'+cb+'">Delete</button>';$('#modal-root').hidden=false;$('#modal-root').className='modal-bx slim';document.body.classList.add('mo');$('#modal-bg').onclick=esc}
+
+function badge(t){let n=0;d.transactions.forEach(x=>{if(t=='overdue'&&!x.returnDate){let d2=new Date(x.dueDate);if(d2<new Date())n++}else if(t=='borrowed'&&!x.returnDate){n++}});return n}
+
+function overdueCount(){let n=0;d.transactions.forEach(x=>{if(!x.returnDate&&new Date(x.dueDate)<new Date())n++});return n}
+
+function calcLateFee(due){let d1=new Date(due);let d2=new Date();let diff=Math.floor((d2-d1)/(86400000));return diff>0?diff*50:0}
+
+function today(){return new Date().toISOString().slice(0,10)}
+
+function sorter(arr,col,dir){return[...arr].sort((a,b)=>{let va=a[col]||'';let vb=b[col]||'';if(typeof va=='number'&&typeof vb=='number')return dir=='asc'?va-vb:vb-va;va=String(va).toLowerCase();vb=String(vb).toLowerCase();if(dir=='asc'){return va.localeCompare(vb)}else{return vb.localeCompare(va)}})}
+
+function colClick(view,e){let th=e.target.closest('th.st');if(!th)return;let col=th.dataset.col;let vn=view.id.replace('view-','');if(!cs[vn])cs[vn]={col:'',dir:''};let s=cs[vn];let dir=s.col==col&&s.dir=='asc'?'dsc':'asc';s.col=col;s.dir=dir=='asc'?'asc':'dsc';render(vn)}
+
+function pageClick(e){let btn=e.target.closest('.pgr button');if(!btn)return;let vn=cv;let p=parseInt(btn.dataset.p);if(!isNaN(p)&&p>=1){cp[vn]=p;render(vn)}}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  navView('dashboard');
+  $('#tb-nav').addEventListener('click',e=>{let btn=e.target.closest('.tb-btn');if(!btn)return;let v=btn.dataset.view;if(v){navView(v)}});
+  $('#btn-export').addEventListener('click',exportCSV);
+  document.addEventListener('keydown',e=>{if(e.key=='/'&&!['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)){e.preventDefault();let s=vv(cv).querySelector('.sbox input');if(s)s.focus()}});
+  $('#modal-x').addEventListener('click',esc);
+  $('#modal-bg').addEventListener('click',esc);
+  document.addEventListener('keydown',e=>{if(e.key=='Escape')esc()});
+  $('#modal-ft').addEventListener('click',e=>{let btn=e.target.closest('button');if(!btn)return;let act=btn.dataset.act;if(act=='cancel'){esc()}else if(act=='confirm'){let cb=btn.dataset.cb;esc();setTimeout(()=>eval(cb)(),200)}});
+  setInterval(()=>{let b=$('#badge-overdue');let n=overdueCount();if(n>0){b.hidden=false;b.textContent=n}else{b.hidden=true}},5000);
+});
+
+function render(vn){
+  let view=vv(vn);if(!view)return;
+  view.innerHTML='';
+  is=0;
+  if(vn=='dashboard')renderDashboard(view);
+  else if(vn=='books')renderBooks(view);
+  else if(vn=='members')renderMembers(view);
+  else if(vn=='borrowing')renderBorrowing(view);
+  else if(vn=='overdue')renderOverdue(view);
+}
+
+function inc(vn){let view=vv(vn);if(is==0){is=1;let a=0;let t=view.querySelectorAll('.counter');let l=t.length;if(!l)return;function u(){a++;if(a>60||is==0){t.forEach(el=>{el.textContent=el.dataset.n});return}t.forEach(el=>{let cur=parseInt(el.textContent)||0;let target=parseInt(el.dataset.n);let v=Math.round(cur+(target-cur)*0.15);if(Math.abs(target-v)<1)v=target;el.textContent=v});requestAnimationFrame(u)}u()}}
+
+function renderDashboard(view){
+  let stats=[
+    {i:'fa-solid fa-book',c:'coral',n:d.books.length,l:'books'},
+    {i:'fa-solid fa-users',c:'green',n:d.members.length,l:'members'},
+    {i:'fa-solid fa-hand-holding-heart',c:'cyan',n:badge('borrowed'),l:'borrowed'},
+    {i:'fa-solid fa-clock',c:'amber',n:badge('overdue'),l:'overdue'},
+    {i:'fa-solid fa-money-bill-wave',c:'red',n:'KSH',l:'revenue'}
+  ];
+  view.innerHTML='<div class="page-hd"><div><h1><i class="fa-solid fa-chart-pie"></i>Dashboard</h1><div class="page-sub">Library overview</div></div></div><div class="stats" id="d-stats">'+stats.map(s=>'<div class="stat"><div class="stat-icon '+s.c+'"><i class="'+s.i+'"></i></div><div class="stat-body"><span class="stat-num">'+(typeof s.n=='number'?'<span class="counter" data-n="'+s.n+'">0</span>':s.n)+'</span><span class="stat-lbl">'+s.l+'</span></div></div>').join('')+'</div>';
+  let g={};d.books.forEach(b=>{g[b.genre]=(g[b.genre]||0)+1});let genres=Object.keys(g).sort((a,b)=>g[b]-g[a]);let max=Math.max(...Object.values(g),1);
+  let txn=d.transactions.slice(-10).reverse();
+  view.innerHTML+='<div class="dash-grid"><div class="panel"><div class="panel-title"><i class="fa-solid fa-chart-simple"></i>Books by Genre</div><div class="chart">'+(genres.length?genres.map(ge=>'<div class="chart-row"><span class="chart-lbl">'+gen(ge)+'</span><div class="chart-track"><div class="chart-fill" style="width:0%" data-w="'+(g[ge]/max*100)+'"></div></div><span class="chart-num">'+g[ge]+'</span></div>').join(''):'<div class="chart-empty">No genres</div>')+'</div></div><div class="panel"><div class="panel-title"><i class="fa-solid fa-arrows-spin"></i>Recent Activity</div>'+(txn.length?txn.map(t=>'<div class="txn-item"><div class="txn-icon"><i class="fa-solid fa-'+(t.returnDate?'rotate-left':'book')+'"></i></div><div class="txn-info"><div class="txn-title">'+t.bookTitle+'</div><div class="txn-sub">'+t.memberName+(t.returnDate?' · returned ':' · borrowed ')+'</div></div><span class="txn-date">'+t.borrowDate.slice(5)+'</span></div>').join(''):'<div class="txn-empty">No transactions yet</div>')+'</div></div>';
+  requestAnimationFrame(()=>{inc('dashboard');Array.from(view.querySelectorAll('.chart-fill')).forEach(el=>{el.style.width=el.dataset.w+'%'})})
+}
+
+function renderBooks(view){
+  let bk=view.querySelector('#search-books');
+  let search=bk?bk.value.toLowerCase():'';
+  let sel=view.querySelector('#filter-books');
+  let genreFilter=sel?sel.value:'';
+  let items=d.books.filter(b=>{
+    if(search&&!b.title.toLowerCase().includes(search)&&!b.author.toLowerCase().includes(search)&&!b.isbn.includes(search))return false;
+    if(genreFilter&&b.genre!=genreFilter)return false;
+    return true
   });
+  let vn='books';let s=cs[vn];if(s.col){items=sorter(items,s.col,s.dir)}
+  let p=cp[vn]||1;let total=items.length;let max=Math.ceil(total/pp);if(p>max)p=max||1;let start=(p-1)*pp;let pg=items.slice(start,start+pp);
+  let genres=[...new Set(d.books.map(b=>b.genre))].sort();
+  view.innerHTML='<div class="page-hd"><div><h1><i class="fa-solid fa-book"></i>Books</h1><div class="page-sub">'+d.books.length+' total titles</div></div><button class="btn btn-p" data-act="add-book"><i class="fa-solid fa-plus"></i>Add Book</button></div><div class="toolbar"><div class="sbox"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-books" placeholder="Search books..." value="'+(search||'')+'"></div><select class="sel" id="filter-books"><option value="">All Genres</option>'+genres.map(g=>'<option value="'+g+'"'+(genreFilter==g?' selected':'')+'>'+g+'</option>').join('')+'</select></div><div class="bgrid">'+(pg.length?pg.map(b=>{
+    let ci=b.id%8;let available=b.qty-d.transactions.filter(t=>t.bookTitle==b.title&&!t.returnDate).length;
+    return '<div class="bcard"><div class="bcvr c'+ci+'"><i class="fa-solid fa-book-bookmark"></i></div><div class="bbd"><div class="btl">'+b.title+'</div><div class="baut">'+b.author+'</div><div class="bmt"><span><i class="fa-solid fa-fingerprint"></i>'+b.isbn.slice(-6)+'</span><span><i class="fa-solid fa-calendar"></i>'+b.year+'</span>'+gen(b.genre)+'</div></div><div class="bft"><span class="badge-c '+(available>0?'ok':'no')+'">'+(available>0?'Available ('+available+')':'Out')+'</span><div class="arow"><button class="btn-icon" data-act="edit-book" data-id="'+b.id+'" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn-icon d" data-act="del-book" data-id="'+b.id+'" title="Delete"><i class="fa-solid fa-trash"></i></button></div></div></div>'
+  }).join(''):'<div class="empty" style="grid-column:1/-1"><i class="fa-solid fa-book-open"></i><p>No books found</p></div>')+'</div>';
+  view.innerHTML+=pgr(total,p,max,vn);
+  view.querySelector('#search-books')?.focus();
+  view.querySelector('#search-books')?.addEventListener('input',debounce(()=>{cp[vn]=1;render(vn)},300));
+  view.querySelector('#filter-books')?.addEventListener('change',()=>{cp[vn]=1;render(vn)})
 }
 
-/** Get today's date as YYYY-MM-DD */
-function todayStr() {
-  return new Date().toISOString().split("T")[0];
+function renderMembers(view){
+  let mk=view.querySelector('#search-members');
+  let search=mk?mk.value.toLowerCase():'';
+  let items=d.members.filter(m=>{if(search&&!m.name.toLowerCase().includes(search)&&!m.email.toLowerCase().includes(search)&&!m.phone.includes(search))return false;return true});
+  let vn='members';let s=cs[vn];if(s.col){items=sorter(items,s.col,s.dir)}
+  let p=memberPage||1;let total=items.length;let max=Math.ceil(total/pp);if(p>max)p=max||1;let start=(p-1)*pp;let pg=items.slice(start,start+pp);
+  view.innerHTML='<div class="page-hd"><div><h1><i class="fa-solid fa-users"></i>Members</h1><div class="page-sub">'+d.members.length+' registered</div></div><button class="btn btn-p" data-act="add-member"><i class="fa-solid fa-plus"></i>Add Member</button></div><div class="toolbar"><div class="sbox"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-members" placeholder="Search members..." value="'+(search||'')+'"></div></div><div class="twrap"><table class="dtbl"><thead><tr><th class="st" data-col="name">Member<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="email">Email<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="phone">Phone<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="joined">Joined<span class="si"><i class="fa-solid fa-sort"></i></span></th><th>Actions</th></tr></thead><tbody>'+(pg.length?pg.map(m=>{
+    let mb=d.transactions.filter(t=>t.memberName==m.name);let bc=mb.filter(t=>!t.returnDate).length;
+    return '<tr><td><div class="mcell"><span class="mav">'+m.name[0]+'</span><div><strong>'+m.name+'</strong></div></div></td><td>'+m.email+'</td><td>'+m.phone.slice(0,8)+'...</td><td>'+m.joined+'</td><td><div class="arow"><button class="btn-icon" data-act="edit-member" data-id="'+m.id+'" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn-icon d" data-act="del-member" data-id="'+m.id+'" title="Delete"><i class="fa-solid fa-trash"></i></button></div></td></tr>'
+  }).join(''):'<tr><td colspan="5"><div class="empty"><i class="fa-solid fa-users-slash"></i><p>No members found</p></div></td></tr>')+'</tbody></table></div>';
+  view.innerHTML+=pgr(total,p,max,vn);
+  view.querySelector('#search-members')?.focus();
+  view.querySelector('#search-members')?.addEventListener('input',debounce(()=>{memberPage=1;render(vn)},300))
 }
 
-/** Add N days to a date string, return YYYY-MM-DD */
-function addDays(dateStr, n) {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
+function renderBorrowing(view){
+  let bk=view.querySelector('#search-borrowing');
+  let search=bk?bk.value.toLowerCase():'';
+  let fil=view.querySelector('#filter-borrowing');
+  let filter=fil?fil.value:'';
+  let items=d.transactions.filter(t=>{
+    if(search&&!t.bookTitle.toLowerCase().includes(search)&&!t.memberName.toLowerCase().includes(search))return false;
+    if(filter=='active'&&t.returnDate)return false;
+    if(filter=='returned'&&!t.returnDate)return false;
+    return true
+  });
+  let vn='borrowing';let s=cs[vn];if(s.col){items=sorter(items,s.col,s.dir)}
+  let p=cp[vn]||1;let total=items.length;let max=Math.ceil(total/pp);if(p>max)p=max||1;let start=(p-1)*pp;let pg=items.slice(start,start+pp);
+  let now=new Date();
+  view.innerHTML='<div class="page-hd"><div><h1><i class="fa-solid fa-hand-holding-heart"></i>Borrowing</h1><div class="page-sub">Manage book loans</div></div><button class="btn btn-p" data-act="borrow-book"><i class="fa-solid fa-plus"></i>Borrow</button></div><div class="toolbar"><div class="sbox"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="search-borrowing" placeholder="Search by book or member..." value="'+(search||'')+'"></div><select class="sel" id="filter-borrowing"><option value="">All</option><option value="active"'+(filter=='active'?' selected':'')+'>Active</option><option value="returned"'+(filter=='returned'?' selected':'')+'>Returned</option></select></div><div class="twrap"><table class="dtbl"><thead><tr><th class="st" data-col="bookTitle">Book<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="memberName">Member<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="borrowDate">Borrowed<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="dueDate">Due<span class="si"><i class="fa-solid fa-sort"></i></span></th><th>Status</th><th>Actions</th></tr></thead><tbody>'+(pg.length?pg.map(t=>{
+    let od=!t.returnDate&&new Date(t.dueDate)<now;let st=t.returnDate?'returned':od?'overdue':'borrowed';
+    return '<tr class="'+(od?'orow':'')+'"><td><strong>'+t.bookTitle+'</strong></td><td>'+t.memberName+'</td><td>'+t.borrowDate+'</td><td>'+t.dueDate+'</td><td><span class="sbadge '+st+'"><i class="fa-solid fa-'+(st=='returned'?'check':od?'exclamation':'book')+'"></i>'+(st=='returned'?'Returned '+t.returnDate:st=='overdue'?'Overdue':'Borrowed '+t.renewCount)+'</span></td><td>'+(t.returnDate?'<span class="sbadge returned"><i class="fa-solid fa-check"></i>Done</span>':'<div class="arow"><button class="btn-icon" data-act="return-book" data-id="'+t.id+'" title="Return"><i class="fa-solid fa-rotate-left"></i></button><button class="btn-icon" data-act="renew-book" data-id="'+t.id+'" title="Renew"><i class="fa-solid fa-arrow-rotate-right"></i></button></div>')+'</td></tr>'
+  }).join(''):'<tr><td colspan="6"><div class="empty"><i class="fa-solid fa-book"></i><p>No borrowing records</p></div></td></tr>')+'</tbody></table></div>';
+  view.innerHTML+=pgr(total,p,max,vn);
+  view.querySelector('#search-borrowing')?.focus();
+  view.querySelector('#search-borrowing')?.addEventListener('input',debounce(()=>{cp[vn]=1;render(vn)},300));
+  view.querySelector('#filter-borrowing')?.addEventListener('change',()=>{cp[vn]=1;render(vn)})
 }
 
-/** Days between two date strings (positive = date2 is later) */
-function daysBetween(date1, date2) {
-  const d1 = new Date(date1 + "T00:00:00");
-  const d2 = new Date(date2 + "T00:00:00");
-  return Math.floor((d2 - d1) / 86400000);
+function renderOverdue(view){
+  let now=new Date();let items=d.transactions.filter(t=>!t.returnDate&&new Date(t.dueDate)<now);
+  let vn='overdue';let s=cs[vn];if(s.col){items=sorter(items,s.col,s.dir)}
+  let p=cp[vn]||1;let total=items.length;let max=Math.ceil(total/pp);if(p>max)p=max||1;let start=(p-1)*pp;let pg=items.slice(start,start+pp);
+  view.innerHTML='<div class="page-hd"><div><h1><i class="fa-solid fa-clock"></i>Overdue</h1><div class="page-sub">'+items.length+' items overdue</div></div></div>'+(items.length?'<div class="twrap"><table class="dtbl"><thead><tr><th class="st" data-col="bookTitle">Book<span class="si"><i class="fa-solid fa-sort"></i></span></th><th class="st" data-col="memberName">Member<span class="si"><i class="fa-solid fa-sort"></i></span></th><th>Due Date</th><th>Days Late</th><th>Late Fee</th><th>Actions</th></tr></thead><tbody>'+pg.map(t=>{
+    let d1=new Date(t.dueDate);let late=Math.floor((now-d1)/(86400000));let fee=late*50;
+    return '<tr><td><strong>'+t.bookTitle+'</strong></td><td>'+t.memberName+'</td><td>'+t.dueDate+'</td><td>'+late+' days</td><td><span class="sbadge overdue"><i class="fa-solid fa-coins"></i> KSH '+fee+'</span></td><td><div class="arow"><button class="btn btn-s btn-sm" data-act="return-book" data-id="'+t.id+'"><i class="fa-solid fa-rotate-left"></i>Return</button><button class="btn-icon" data-act="view-member" data-name="'+t.memberName+'" title="Contact"><i class="fa-solid fa-eye"></i></button></div></td></tr>'
+  }).join('')+'</tbody></table></div>':'<div class="empty"><i class="fa-solid fa-circle-check" style="color:var(--g);opacity:0.4;font-size:2.5rem"></i><p>No overdue items. All good!</p></div>');
+  view.innerHTML+=pgr(total,p,max,vn)
 }
 
-/** Generate a short unique ID */
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function pgr(total,p,max,vn){
+  if(total<=pp)return '';
+  let r='<div class="pgr">';
+  r+='<button data-p="'+(p-1)+'"'+(p<=1?' disabled':'')+'><i class="fa-solid fa-chevron-left"></i></button>';
+  let s=Math.max(1,Math.min(p-2,max-4));let e=Math.min(max,s+4);
+  for(let i=s;i<=e;i++){r+='<button data-p="'+i+'"'+(i==p?' class="on"':'')+'>'+i+'</button>'}
+  r+='<button data-p="'+(p+1)+'"'+(p>=max?' disabled':'')+'><i class="fa-solid fa-chevron-right"></i></button>';
+  r+='<span class="info">Page '+p+' of '+max+'</span></div>';
+  return r
 }
 
-/** Show a toast notification */
-function showToast(msg, type = "info", duration = 3200) {
-  const container = document.getElementById("toast-container");
-  if (!container) return;
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
 
-  const icons = {
-    success: "fa-circle-check",
-    error: "fa-circle-xmark",
-    warning: "fa-triangle-exclamation",
-    info: "fa-circle-info",
-  };
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.setAttribute("role", "status");
-  toast.setAttribute("aria-live", "polite");
-  toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}" aria-hidden="true"></i><span>${msg}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.animation = "toastOut 0.3s ease forwards";
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
+let contentDelegate=function(e){
+  let view=e.currentTarget;
+  let btn=e.target.closest('[data-act]');
+  if(!btn)return;
+  let act=btn.dataset.act;
+  let id=btn.dataset.id;
+  let cb=btn.dataset.cb;
+  if(act=='add-book'){showBookForm()}
+  else if(act=='edit-book'){showBookForm(parseInt(id))}
+  else if(act=='del-book'){confirmDel('Delete this book?','delBook('+id+')')}
+  else if(act=='add-member'){showMemberForm()}
+  else if(act=='edit-member'){showMemberForm(parseInt(id))}
+  else if(act=='del-member'){confirmDel('Delete this member?','delMember('+id+')')}
+  else if(act=='borrow-book'){showBorrowForm()}
+  else if(act=='return-book'){returnBook(parseInt(id))}
+  else if(act=='renew-book'){renewBook(parseInt(id))}
+  else if(act=='view-member'){let nm=btn.dataset.name;toast('Contact: '+nm,'info')}
+  else if(act=='add-borrow'){addBorrow()}
+  else if(act=='save-book'){saveBook()}
+  else if(act=='save-member'){saveMember()}
+  else if(act=='renew-ok'){let bi=parseInt(btn.dataset.bi);let mi=parseInt(btn.dataset.mi);doRenew(bi,mi)}
+};
+['dashboard','books','members','borrowing','overdue'].forEach(v=>{
+  let el=vv(v);if(el)el.addEventListener('click',contentDelegate)
+});
+['dashboard','books','members','borrowing','overdue'].forEach(v=>{
+  let el=vv(v);if(el)el.addEventListener('click',colClick);
+  let el2=vv(v);if(el2)el2.addEventListener('click',pageClick)
+});
+
+function showBookForm(id){
+  let book=id?d.books.find(b=>b.id==id):null;
+  let title=book?'Edit Book':'Add Book';
+  let genres=[...new Set(d.books.map(b=>b.genre))].sort();
+  let html='<form id="book-form">'+'<input type="hidden" id="f-book-id" value="'+(book?book.id:'')+'">'+
+    '<div class="fgroup"><label>Title</label><input type="text" id="f-book-title" value="'+(book?book.title:'')+'" placeholder="Book title" required></div>'+
+    '<div class="frow"><div class="fgroup"><label>Author</label><input type="text" id="f-book-author" value="'+(book?book.author:'')+'" placeholder="Author name" required></div>'+
+    '<div class="fgroup"><label>Year</label><input type="number" id="f-book-year" value="'+(book?book.year:'2025')+'" min="1800" max="2099" required></div></div>'+
+    '<div class="frow"><div class="fgroup"><label>ISBN</label><input type="text" id="f-book-isbn" value="'+(book?book.isbn:'')+'" placeholder="ISBN" required></div>'+
+    '<div class="fgroup"><label>Genre</label><select id="f-book-genre">'+genres.map(g=>'<option value="'+g+'"'+(book&&book.genre==g?' selected':'')+'>'+g+'</option>').join('')+'</select></div></div>'+
+    '<div class="fgroup"><label>Quantity</label><input type="number" id="f-book-qty" value="'+(book?book.qty:'1')+'" min="1" max="999" required></div>'+
+    '<div class="ferr" id="book-form-error"></div></form>';
+  $('#modal-title').textContent=title;
+  $('#modal-bd').innerHTML=html;
+  $('#modal-ft').innerHTML='<button class="btn btn-g" data-act="cancel">Cancel</button><button class="btn btn-p" data-act="save-book">'+(book?'Update':'Add')+'</button>';
+  $('#modal-root').hidden=false;$('#modal-root').className='modal-bx';document.body.classList.add('mo');$('#modal-bg').onclick=esc;
+  $('#f-book-title').focus()
 }
 
-/** Open a modal */
-function openModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add("open");
+function saveBook(){
+  let id=$('#f-book-id').value;let title=$('#f-book-title').value.trim();let author=$('#f-book-author').value.trim();let year=parseInt($('#f-book-year').value);let isbn=$('#f-book-isbn').value.trim();let genre=$('#f-book-genre').value;let qty=parseInt($('#f-book-qty').value);
+  let err=$('#book-form-error');err.className='ferr';err.textContent='';
+  if(!title){err.textContent='Title is required';err.className='ferr s';$('#f-book-title').focus();return}
+  if(!author){err.textContent='Author is required';err.className='ferr s';$('#f-book-author').focus();return}
+  if(!isbn){err.textContent='ISBN is required';err.className='ferr s';$('#f-book-isbn').focus();return}
+  if(isNaN(year)||year<1800||year>2099){err.textContent='Invalid year';err.className='ferr s';$('#f-book-year').focus();return}
+  if(isNaN(qty)||qty<1){err.textContent='Quantity must be at least 1';err.className='ferr s';$('#f-book-qty').focus();return}
+  if(id){let b=d.books.find(x=>x.id==parseInt(id));if(b){b.title=title;b.author=author;b.year=year;b.isbn=isbn;b.genre=genre;b.qty=qty};toast('Book updated','s')}
+  else{let ni=id();d.books.push({id:ni,title,author,year,isbn,genre,qty});toast('Book added','s')}
+  sv();esc();render(cv)
 }
 
-/** Close a modal */
-function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove("open");
+function delBook(id){
+  let idx=d.books.findIndex(b=>b.id==id);if(idx>-1){d.books.splice(idx,1);d.transactions=d.transactions.filter(t=>{let b=d.books.find(x=>x.title==t.bookTitle);return b||!t.returnDate?b:t.bookTitle!=t.bookTitle});sv();render(cv);toast('Book deleted','s')}
 }
 
-/** Get initials from a name */
-function initials(name) {
-  if (!name || typeof name !== "string") return "?";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+function showMemberForm(id){
+  let member=id?d.members.find(m=>m.id==id):null;
+  let title=member?'Edit Member':'Add Member';
+  let html='<form id="member-form">'+'<input type="hidden" id="f-member-id" value="'+(member?member.id:'')+'">'+
+    '<div class="fgroup"><label>Name</label><input type="text" id="f-member-name" value="'+(member?member.name:'')+'" placeholder="Full name" required></div>'+
+    '<div class="frow"><div class="fgroup"><label>Email</label><input type="email" id="f-member-email" value="'+(member?member.email:'')+'" placeholder="Email" required></div>'+
+    '<div class="fgroup"><label>Phone</label><input type="text" id="f-member-phone" value="'+(member?member.phone:'')+'" placeholder="Phone" required></div></div>'+
+    '<div class="ferr" id="member-form-error"></div></form>';
+  $('#modal-title').textContent=title;
+  $('#modal-bd').innerHTML=html;
+  $('#modal-ft').innerHTML='<button class="btn btn-g" data-act="cancel">Cancel</button><button class="btn btn-p" data-act="save-member">'+(member?'Update':'Add')+'</button>';
+  $('#modal-root').hidden=false;$('#modal-root').className='modal-bx';document.body.classList.add('mo');$('#modal-bg').onclick=esc;
+  $('#f-member-name').focus()
 }
 
-/** Escape HTML to prevent XSS */
-function esc(str) {
-  const d = document.createElement("div");
-  d.appendChild(document.createTextNode(str || ""));
-  return d.innerHTML;
+function saveMember(){
+  let id=$('#f-member-id').value;let name=$('#f-member-name').value.trim();let email=$('#f-member-email').value.trim();let phone=$('#f-member-phone').value.trim();
+  let err=$('#member-form-error');err.className='ferr';err.textContent='';
+  if(!name){err.textContent='Name is required';err.className='ferr s';$('#f-member-name').focus();return}
+  if(!email){err.textContent='Email is required';err.className='ferr s';$('#f-member-email').focus();return}
+  if(!phone){err.textContent='Phone is required';err.className='ferr s';$('#f-member-phone').focus();return}
+  if(id){let m=d.members.find(x=>x.id==parseInt(id));if(m){m.name=name;m.email=email;m.phone=phone};toast('Member updated','s')}
+  else{let ni=id();d.members.push({id:ni,name,email,phone,joined:today()});toast('Member added','s')}
+  sv();esc();render(cv)
 }
 
-// ============================================================
-// DATA CLASSES
-// ============================================================
-
-class Book {
-  constructor({
-    id,
-    title,
-    author,
-    isbn,
-    year,
-    genre,
-    totalCopies,
-    availableCopies,
-  }) {
-    this.id = id || uid();
-    this.title = title;
-    this.author = author;
-    this.isbn = isbn;
-    this.year = year;
-    this.genre = genre;
-    this.totalCopies = parseInt(totalCopies) || 1;
-    this.availableCopies =
-      availableCopies !== undefined
-        ? parseInt(availableCopies)
-        : this.totalCopies;
-  }
+function delMember(id){
+  let idx=d.members.findIndex(m=>m.id==id);if(idx>-1){d.members.splice(idx,1);sv();render(cv);toast('Member deleted','s')}
 }
 
-class Member {
-  constructor({ id, name, memberId, email, phone, membershipDate }) {
-    this.id = id || uid();
-    this.name = name;
-    this.memberId = memberId;
-    this.email = email;
-    this.phone = phone || "";
-    this.membershipDate = membershipDate || todayStr();
-  }
+function showBorrowForm(){
+  let html='<form id="borrow-form">'+
+    '<div class="fgroup"><label>Book</label><select id="f-borrow-book">'+d.books.filter(b=>b.qty-d.transactions.filter(t=>t.bookTitle==b.title&&!t.returnDate).length>0).map(b=>'<option value="'+b.title+'">'+b.title+' - '+d.transactions.filter(t=>t.bookTitle==b.title&&!t.returnDate).length+'/'+b.qty+'</option>').join('')+'</select></div>'+
+    '<div class="fgroup"><label>Member</label><select id="f-borrow-member">'+d.members.map(m=>'<option value="'+m.name+'">'+m.name+'</option>').join('')+'</select></div>'+
+    '<div class="ferr" id="borrow-form-error"></div></form>';
+  $('#modal-title').textContent='Borrow Book';
+  $('#modal-bd').innerHTML=html;
+  $('#modal-ft').innerHTML='<button class="btn btn-g" data-act="cancel">Cancel</button><button class="btn btn-p" data-act="add-borrow">Borrow</button>';
+  $('#modal-root').hidden=false;$('#modal-root').className='modal-bx';document.body.classList.add('mo');$('#modal-bg').onclick=esc
 }
 
-class Transaction {
-  constructor({
-    id,
-    memberId,
-    bookId,
-    borrowDate,
-    dueDate,
-    returnDate,
-    status,
-    lateFee,
-    renewCount,
-  }) {
-    this.id = id || uid();
-    this.memberId = memberId;
-    this.bookId = bookId;
-    this.borrowDate = borrowDate || todayStr();
-    this.dueDate = dueDate || addDays(this.borrowDate, 14);
-    this.returnDate = returnDate || null;
-    this.status = status || "borrowed"; // 'borrowed' | 'returned' | 'overdue' | 'renewed'
-    this.lateFee = lateFee || 0;
-    this.renewCount = renewCount || 0;
-  }
+function addBorrow(){
+  let book=$('#f-borrow-book').value;let member=$('#f-borrow-member').value;
+  let err=$('#borrow-form-error');err.className='ferr';err.textContent='';
+  if(!book){err.textContent='Select a book';err.className='ferr s';return}
+  if(!member){err.textContent='Select a member';err.className='ferr s';return}
+  let bk=d.books.find(b=>b.title==book);if(!bk){err.textContent='Book not found';err.className='ferr s';return}
+  let borrowed=d.transactions.filter(t=>t.bookTitle==book&&!t.returnDate).length;
+  if(borrowed>=bk.qty){err.textContent='No copies available';err.className='ferr s';return}
+  let ni=id();let d1=new Date();let d2=new Date(d1);d2.setDate(d2.getDate()+14);
+  d.transactions.push({id:ni,bookTitle:book,memberName:member,borrowDate:today(),dueDate:d2.toISOString().slice(0,10),returnDate:null,renewCount:0});
+  sv();esc();render(cv);toast('Book borrowed: '+book,'s')
 }
 
-// ============================================================
-// LIBRARY MANAGER
-// ============================================================
-
-class LibraryManager {
-  constructor() {
-    this.books = [];
-    this.members = [];
-    this.transactions = [];
-    this._pendingDeleteFn = null;
-    this._load();
-    if (!this.books.length && !this.members.length) {
-      this._loadSampleData();
-    }
-    this._syncOverdueStatus();
-  }
-
-  // -------------------- PERSISTENCE --------------------
-
-  _save() {
-    localStorage.setItem("lib_books", JSON.stringify(this.books));
-    localStorage.setItem("lib_members", JSON.stringify(this.members));
-    localStorage.setItem("lib_transactions", JSON.stringify(this.transactions));
-  }
-
-  _load() {
-    const b = localStorage.getItem("lib_books");
-    const m = localStorage.getItem("lib_members");
-    const t = localStorage.getItem("lib_transactions");
-    this.books = b ? JSON.parse(b).map((d) => new Book(d)) : [];
-    this.members = m ? JSON.parse(m).map((d) => new Member(d)) : [];
-    this.transactions = t ? JSON.parse(t).map((d) => new Transaction(d)) : [];
-  }
-
-  _loadSampleData() {
-    // Sample books
-    const sampleBooks = [
-      {
-        title: "The Great Gatsby",
-        author: "F. Scott Fitzgerald",
-        isbn: "978-0-7432-7356-5",
-        year: 1925,
-        genre: "Fiction",
-        totalCopies: 2,
-      },
-      {
-        title: "A Brief History of Time",
-        author: "Stephen Hawking",
-        isbn: "978-0-553-38016-3",
-        year: 1988,
-        genre: "Science",
-        totalCopies: 1,
-      },
-      {
-        title: "1984",
-        author: "George Orwell",
-        isbn: "978-0-451-52493-5",
-        year: 1949,
-        genre: "Fiction",
-        totalCopies: 3,
-      },
-      {
-        title: "Sapiens",
-        author: "Yuval Noah Harari",
-        isbn: "978-0-06-231609-7",
-        year: 2011,
-        genre: "History",
-        totalCopies: 2,
-      },
-      {
-        title: "Clean Code",
-        author: "Robert C. Martin",
-        isbn: "978-0-13-235088-4",
-        year: 2008,
-        genre: "Technology",
-        totalCopies: 1,
-      },
-    ];
-    // Sample members
-    const sampleMembers = [
-      {
-        name: "John Smith",
-        memberId: "M001",
-        email: "john@email.com",
-        phone: "(555) 123-4567",
-        membershipDate: "2024-01-10",
-      },
-      {
-        name: "Sarah Johnson",
-        memberId: "M002",
-        email: "sarah@email.com",
-        phone: "(555) 234-5678",
-        membershipDate: "2024-02-14",
-      },
-      {
-        name: "Mike Davis",
-        memberId: "M003",
-        email: "mike@email.com",
-        phone: "(555) 345-6789",
-        membershipDate: "2024-03-05",
-      },
-    ];
-
-    sampleBooks.forEach((d) => this.books.push(new Book(d)));
-    sampleMembers.forEach((d) => this.members.push(new Member(d)));
-    this._save();
-  }
-
-  // -------------------- SYNC OVERDUE --------------------
-
-  _syncOverdueStatus() {
-    const today = todayStr();
-    let changed = false;
-    this.transactions.forEach((t) => {
-      if (t.status === "borrowed" || t.status === "renewed") {
-        if (t.dueDate < today) {
-          t.status = "overdue";
-          changed = true;
-        }
-      }
-    });
-    if (changed) this._save();
-  }
-
-  // -------------------- STATS --------------------
-
-  getStats() {
-    const totalCopies = this.books.reduce((s, b) => s + b.totalCopies, 0);
-    const availCopies = this.books.reduce((s, b) => s + b.availableCopies, 0);
-    const active = this.transactions.filter((t) => t.status !== "returned");
-    const overdue = this.transactions.filter((t) => t.status === "overdue");
-    return {
-      totalBooks: this.books.length,
-      totalCopies,
-      available: availCopies,
-      members: this.members.length,
-      borrowed: active.length,
-      overdue: overdue.length,
-    };
-  }
-
-  // -------------------- BOOKS --------------------
-
-  addBook(data) {
-    if (
-      !data.title ||
-      !data.author ||
-      !data.isbn ||
-      !data.genre ||
-      !data.totalCopies
-    ) {
-      throw new Error("Please fill in all required fields.");
-    }
-    if (this.books.some((b) => b.isbn === data.isbn)) {
-      throw new Error("A book with this ISBN already exists.");
-    }
-    const book = new Book(data);
-    this.books.push(book);
-    this._save();
-    return book;
-  }
-
-  updateBook(id, data) {
-    const book = this.books.find((b) => b.id === id);
-    if (!book) throw new Error("Book not found.");
-    if (this.books.some((b) => b.isbn === data.isbn && b.id !== id)) {
-      throw new Error("Another book with this ISBN already exists.");
-    }
-    const diff = parseInt(data.totalCopies) - book.totalCopies;
-    book.title = data.title;
-    book.author = data.author;
-    book.isbn = data.isbn;
-    book.year = data.year;
-    book.genre = data.genre;
-    book.totalCopies = parseInt(data.totalCopies);
-    book.availableCopies = Math.max(0, book.availableCopies + diff);
-    this._save();
-    return book;
-  }
-
-  deleteBook(id) {
-    const active = this.transactions.some(
-      (t) => t.bookId === id && t.status !== "returned",
-    );
-    if (active)
-      throw new Error("Cannot delete a book that is currently borrowed.");
-    this.books = this.books.filter((b) => b.id !== id);
-    this._save();
-  }
-
-  getBook(id) {
-    return this.books.find((b) => b.id === id);
-  }
-
-  // -------------------- MEMBERS --------------------
-
-  addMember(data) {
-    if (!data.name || !data.memberId || !data.email) {
-      throw new Error("Please fill in all required fields.");
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      throw new Error("Please enter a valid email address.");
-    }
-    if (this.members.some((m) => m.memberId === data.memberId)) {
-      throw new Error("A member with this ID already exists.");
-    }
-    const member = new Member(data);
-    this.members.push(member);
-    this._save();
-    return member;
-  }
-
-  updateMember(id, data) {
-    const member = this.members.find((m) => m.id === id);
-    if (!member) throw new Error("Member not found.");
-    if (this.members.some((m) => m.memberId === data.memberId && m.id !== id)) {
-      throw new Error("Another member with this ID already exists.");
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      throw new Error("Please enter a valid email address.");
-    }
-    member.name = data.name;
-    member.memberId = data.memberId;
-    member.email = data.email;
-    member.phone = data.phone;
-    member.membershipDate = data.membershipDate;
-    this._save();
-    return member;
-  }
-
-  deleteMember(id) {
-    const active = this.transactions.some(
-      (t) => t.memberId === id && t.status !== "returned",
-    );
-    if (active)
-      throw new Error("Cannot delete a member with active borrowings.");
-    this.members = this.members.filter((m) => m.id !== id);
-    this._save();
-  }
-
-  getMember(id) {
-    return this.members.find((m) => m.id === id);
-  }
-
-  getMemberByInternalId(id) {
-    return this.members.find((m) => m.id === id);
-  }
-
-  getMemberBorrowCount(id) {
-    return this.transactions.filter(
-      (t) => t.memberId === id && t.status !== "returned",
-    ).length;
-  }
-
-  getMemberHistory(id) {
-    return this.transactions
-      .filter((t) => t.memberId === id)
-      .sort((a, b) => (b.borrowDate > a.borrowDate ? 1 : -1));
-  }
-
-  // -------------------- BORROWING --------------------
-
-  borrowBook(memberId, bookId, borrowDate) {
-    const book = this.getBook(bookId);
-    if (!book) throw new Error("Book not found.");
-    if (book.availableCopies < 1)
-      throw new Error("No copies available for this book.");
-    const member = this.getMemberByInternalId(memberId);
-    if (!member) throw new Error("Member not found.");
-
-    const effectiveBorrowDate = borrowDate || todayStr();
-    const txn = new Transaction({
-      memberId,
-      bookId,
-      borrowDate: effectiveBorrowDate,
-      dueDate: addDays(effectiveBorrowDate, 14),
-    });
-    book.availableCopies -= 1;
-    this.transactions.push(txn);
-    this._save();
-    return txn;
-  }
-
-  returnBook(txnId) {
-    const txn = this.transactions.find((t) => t.id === txnId);
-    if (!txn) throw new Error("Transaction not found.");
-    if (txn.status === "returned")
-      throw new Error("This book has already been returned.");
-
-    const today = todayStr();
-    txn.returnDate = today;
-    txn.status = "returned";
-
-    // Calculate late fee
-    const daysLate = daysBetween(txn.dueDate, today);
-    txn.lateFee = daysLate > 0 ? parseFloat((daysLate * 0.5).toFixed(2)) : 0;
-
-    const book = this.getBook(txn.bookId);
-    if (book)
-      book.availableCopies = Math.min(
-        book.availableCopies + 1,
-        book.totalCopies,
-      );
-    this._save();
-    return txn;
-  }
-
-  renewBook(txnId) {
-    const txn = this.transactions.find((t) => t.id === txnId);
-    if (!txn) throw new Error("Transaction not found.");
-    if (txn.status === "returned")
-      throw new Error("Cannot renew a returned book.");
-    if (txn.renewCount >= 1)
-      throw new Error(
-        "This book has already been renewed once. Please return it.",
-      );
-
-    txn.dueDate = addDays(todayStr(), 14);
-    txn.renewCount += 1;
-    txn.status = "renewed";
-    this._save();
-    return txn;
-  }
-
-  calcLateFee(txnId) {
-    const txn = this.transactions.find((t) => t.id === txnId);
-    if (!txn) return 0;
-    const today = todayStr();
-    const daysLate = daysBetween(txn.dueDate, today);
-    return daysLate > 0 ? parseFloat((daysLate * 0.5).toFixed(2)) : 0;
-  }
-
-  getActiveTransactions() {
-    return this.transactions.filter((t) => t.status !== "returned");
-  }
-
-  getOverdueTransactions() {
-    return this.transactions.filter((t) => t.status === "overdue");
-  }
-
-  // -------------------- GENRE STATS --------------------
-
-  getGenreStats() {
-    const map = {};
-    this.transactions.forEach((t) => {
-      const book = this.getBook(t.bookId);
-      if (book) map[book.genre] = (map[book.genre] || 0) + 1;
-    });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
-  }
-
-  // -------------------- EXPORT --------------------
-
-  exportCSV(type) {
-    let csv = "";
-    if (type === "books") {
-      csv = "Title,Author,ISBN,Year,Genre,Total Copies,Available Copies\n";
-      this.books.forEach((b) => {
-        csv += `"${b.title}","${b.author}","${b.isbn}","${b.year}","${b.genre}","${b.totalCopies}","${b.availableCopies}"\n`;
-      });
-    } else if (type === "members") {
-      csv = "Member ID,Name,Email,Phone,Membership Date\n";
-      this.members.forEach((m) => {
-        csv += `"${m.memberId}","${m.name}","${m.email}","${m.phone}","${m.membershipDate}"\n`;
-      });
-    } else if (type === "transactions") {
-      csv =
-        "Transaction ID,Member,Book,Borrow Date,Due Date,Return Date,Status,Late Fee\n";
-      this.transactions.forEach((t) => {
-        const mem = this.getMemberByInternalId(t.memberId);
-        const bk = this.getBook(t.bookId);
-        csv += `"${t.id}","${mem ? mem.name : "Unknown"}","${bk ? bk.title : "Unknown"}","${t.borrowDate}","${t.dueDate}","${t.returnDate || ""}","${t.status}","${t.lateFee}"\n`;
-      });
-    }
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `library_${type}_${todayStr()}.csv`;
-    a.click();
-    showToast(
-      `${type.charAt(0).toUpperCase() + type.slice(1)} exported successfully!`,
-      "success",
-    );
-  }
+function returnBook(id){
+  let txn=d.transactions.find(t=>t.id==id);if(!txn){toast('Transaction not found','e');return}
+  txn.returnDate=today();sv();render(cv);toast('Book returned: '+txn.bookTitle,'s')
 }
 
-// ============================================================
-// UI CONTROLLER
-// ============================================================
-
-class UIController {
-  constructor(lib) {
-    this.lib = lib;
-    this._currentTab = "dashboard";
-    this._init();
-  }
-
-  _init() {
-    this._bindNav();
-    this._bindModals();
-    this._bindBooks();
-    this._bindMembers();
-    this._bindBorrowing();
-    this._bindSearch();
-    this._bindMisc();
-    this.renderAll();
-  }
-
-  renderAll() {
-    this._syncOverdue();
-    this.renderDashboard();
-    this.renderBooks();
-    this.renderMembers();
-    this.renderBorrowing();
-    this.renderOverdue();
-    this._updateOverdueBadge();
-  }
-
-  _syncOverdue() {
-    this.lib._syncOverdueStatus();
-  }
-
-  // -------------------- NAV --------------------
-
-  _bindNav() {
-    document.querySelectorAll(".nav-item").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tab = btn.dataset.tab;
-        this._switchTab(tab);
-        // Close sidebar on mobile
-        document.getElementById("sidebar")?.classList.remove("open");
-        document.getElementById("sidebar-overlay")?.classList.remove("open");
-      });
-    });
-    const menuToggle = document.getElementById("menu-toggle");
-    if (menuToggle) {
-      menuToggle.addEventListener("click", () => {
-        document.getElementById("sidebar")?.classList.toggle("open");
-        document.getElementById("sidebar-overlay")?.classList.toggle("open");
-      });
-    }
-    const sidebarOverlay = document.getElementById("sidebar-overlay");
-    if (sidebarOverlay) {
-      sidebarOverlay.addEventListener("click", () => {
-        document.getElementById("sidebar")?.classList.remove("open");
-        document.getElementById("sidebar-overlay")?.classList.remove("open");
-      });
-    }
-  }
-
-  _switchTab(tab) {
-    this._currentTab = tab;
-    document.querySelectorAll(".nav-item").forEach((b) => {
-      const active = b.dataset.tab === tab;
-      b.classList.toggle("active", active);
-      b.setAttribute("aria-pressed", active ? "true" : "false");
-    });
-    document
-      .querySelectorAll(".tab-section")
-      .forEach((s) => s.classList.toggle("active", s.id === `tab-${tab}`));
-    if (tab === "dashboard") this.renderDashboard();
-    if (tab === "books") this.renderBooks();
-    if (tab === "members") this.renderMembers();
-    if (tab === "borrowing") this.renderBorrowing();
-    if (tab === "overdue") this.renderOverdue();
-  }
-
-  _updateOverdueBadge() {
-    const n = this.lib.getOverdueTransactions().length;
-    const badge = document.getElementById("overdue-badge");
-    if (badge) {
-      badge.textContent = n;
-      if (n > 0) {
-        badge.style.display = "";
-        badge.setAttribute("aria-hidden", "false");
-        badge.setAttribute("aria-label", `${n} overdue`);
-      } else {
-        badge.style.display = "none";
-        badge.setAttribute("aria-hidden", "true");
-        badge.removeAttribute("aria-label");
-      }
-    }
-  }
-
-  // -------------------- MODALS --------------------
-
-  _bindModals() {
-    // Close buttons
-    document.querySelectorAll("[data-close]").forEach((btn) => {
-      btn.addEventListener("click", () => closeModal(btn.dataset.close));
-    });
-    // Close on overlay click
-    document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-      overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) overlay.classList.remove("open");
-      });
-    });
-  }
-
-  // -------------------- BOOKS --------------------
-
-  _bindBooks() {
-    const openAddBookBtn = document.getElementById("open-add-book");
-    if (openAddBookBtn) {
-      openAddBookBtn.addEventListener("click", () => {
-        this._resetBookForm();
-        document.getElementById("book-modal-title").textContent =
-          "Add New Book";
-        document.getElementById("book-edit-id").value = "";
-        openModal("book-modal");
-      });
-    }
-
-    const saveBookBtn = document.getElementById("save-book-btn");
-    if (saveBookBtn) {
-      saveBookBtn.addEventListener("click", () => {
-        const id = document.getElementById("book-edit-id").value;
-        const data = {
-          title: document.getElementById("book-title").value.trim(),
-          author: document.getElementById("book-author").value.trim(),
-          isbn: document.getElementById("book-isbn").value.trim(),
-          year: document.getElementById("book-year").value.trim(),
-          genre: document.getElementById("book-genre").value,
-          totalCopies: document.getElementById("book-copies").value,
-        };
-        try {
-          if (id) {
-            this.lib.updateBook(id, data);
-            showToast("Book updated successfully!", "success");
-          } else {
-            this.lib.addBook(data);
-            showToast("Book added successfully!", "success");
-          }
-          closeModal("book-modal");
-          this.renderAll();
-        } catch (e) {
-          showToast(e.message, "error");
-        }
-      });
-    }
-  }
-
-  _resetBookForm() {
-    [
-      "book-title",
-      "book-author",
-      "book-isbn",
-      "book-year",
-      "book-copies",
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-    const genreEl = document.getElementById("book-genre");
-    if (genreEl) genreEl.value = "";
-  }
-
-  _editBook(id) {
-    const book = this.lib.getBook(id);
-    if (!book) return;
-    document.getElementById("book-modal-title").textContent = "Edit Book";
-    document.getElementById("book-edit-id").value = id;
-    document.getElementById("book-title").value = book.title;
-    document.getElementById("book-author").value = book.author;
-    document.getElementById("book-isbn").value = book.isbn;
-    document.getElementById("book-year").value = book.year;
-    document.getElementById("book-genre").value = book.genre;
-    document.getElementById("book-copies").value = book.totalCopies;
-    openModal("book-modal");
-  }
-
-  _deleteBook(id) {
-    document.getElementById("confirm-message").textContent =
-      "Are you sure you want to delete this book? This action cannot be undone.";
-    this.lib._pendingDeleteFn = () => {
-      try {
-        this.lib.deleteBook(id);
-        showToast("Book deleted.", "success");
-        this.renderAll();
-      } catch (e) {
-        showToast(e.message, "error");
-      }
-    };
-    openModal("confirm-modal");
-  }
-
-  renderBooks(filter = "") {
-    const grid = document.getElementById("books-grid");
-    if (!grid) return;
-
-    const search = (
-      document.getElementById("book-search")?.value || ""
-    ).toLowerCase();
-    const genre = document.getElementById("genre-filter")?.value || "";
-
-    let books = this.lib.books.filter((b) => {
-      const matchSearch =
-        !search ||
-        b.title.toLowerCase().includes(search) ||
-        b.author.toLowerCase().includes(search) ||
-        b.isbn.toLowerCase().includes(search);
-      const matchGenre = !genre || b.genre === genre;
-      return matchSearch && matchGenre;
-    });
-
-    if (!books.length) {
-      grid.innerHTML = `<div class="empty-state"><i class="fa-solid fa-book-open"></i><p>No books found${search || genre ? " matching your filters" : ""}.</p></div>`;
-      return;
-    }
-
-    const colors = ["c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7"];
-    grid.innerHTML = books
-      .map((b, i) => {
-        const avail = b.availableCopies;
-        const badgeClass =
-          avail === 0 ? "none" : avail <= 1 ? "low" : "available";
-        const badgeText = avail === 0 ? "Out of Stock" : `${avail} Available`;
-        const colorClass = colors[i % colors.length];
-        return `
-        <div class="book-card">
-          <div class="book-cover ${colorClass}"><i class="fa-solid fa-book"></i></div>
-          <div class="book-body">
-            <div class="book-title">${esc(b.title)}</div>
-            <div class="book-author">${esc(b.author)}</div>
-            <div class="book-meta">
-              <span class="genre-tag">${esc(b.genre)}</span>
-              <span><i class="fa-regular fa-calendar"></i>${b.year || "—"}</span>
-              <span><i class="fa-solid fa-barcode"></i>${esc(b.isbn)}</span>
-            </div>
-          </div>
-          <div class="book-footer">
-            <span class="copies-badge ${badgeClass}">${badgeText}</span>
-            <div class="book-actions">
-              <button class="btn-icon" title="Edit" onclick="ui._editBook('${b.id}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn-icon danger" title="Delete" onclick="ui._deleteBook('${b.id}')"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-        </div>`;
-      })
-      .join("");
-  }
-
-  // -------------------- MEMBERS --------------------
-
-  _bindMembers() {
-    const openAddMemberBtn = document.getElementById("open-add-member");
-    if (openAddMemberBtn) {
-      openAddMemberBtn.addEventListener("click", () => {
-        this._resetMemberForm();
-        document.getElementById("member-modal-title").textContent =
-          "Add New Member";
-        document.getElementById("member-edit-id").value = "";
-        const dateEl = document.getElementById("member-date");
-        if (dateEl) dateEl.value = todayStr();
-        openModal("member-modal");
-      });
-    }
-
-    const saveMemberBtn = document.getElementById("save-member-btn");
-    if (saveMemberBtn) {
-      saveMemberBtn.addEventListener("click", () => {
-        const id = document.getElementById("member-edit-id").value;
-        const data = {
-          name: document.getElementById("member-name").value.trim(),
-          memberId: document.getElementById("member-id-input").value.trim(),
-          email: document.getElementById("member-email").value.trim(),
-          phone: document.getElementById("member-phone").value.trim(),
-          membershipDate: document.getElementById("member-date").value,
-        };
-        try {
-          if (id) {
-            this.lib.updateMember(id, data);
-            showToast("Member updated!", "success");
-          } else {
-            this.lib.addMember(data);
-            showToast("Member added!", "success");
-          }
-          closeModal("member-modal");
-          this.renderAll();
-        } catch (e) {
-          showToast(e.message, "error");
-        }
-      });
-    }
-  }
-
-  _resetMemberForm() {
-    [
-      "member-name",
-      "member-id-input",
-      "member-email",
-      "member-phone",
-      "member-date",
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-  }
-
-  _editMember(id) {
-    const m = this.lib.getMemberByInternalId(id);
-    if (!m) return;
-    document.getElementById("member-modal-title").textContent = "Edit Member";
-    document.getElementById("member-edit-id").value = id;
-    document.getElementById("member-name").value = m.name;
-    document.getElementById("member-id-input").value = m.memberId;
-    document.getElementById("member-email").value = m.email;
-    document.getElementById("member-phone").value = m.phone;
-    document.getElementById("member-date").value = m.membershipDate;
-    openModal("member-modal");
-  }
-
-  _deleteMember(id) {
-    document.getElementById("confirm-message").textContent =
-      "Are you sure you want to delete this member? This action cannot be undone.";
-    this.lib._pendingDeleteFn = () => {
-      try {
-        this.lib.deleteMember(id);
-        showToast("Member deleted.", "success");
-        this.renderAll();
-      } catch (e) {
-        showToast(e.message, "error");
-      }
-    };
-    openModal("confirm-modal");
-  }
-
-  _showMemberHistory(id) {
-    const m = this.lib.getMemberByInternalId(id);
-    if (!m) return;
-    const history = this.lib.getMemberHistory(id);
-    document.getElementById("history-modal-title").textContent =
-      `Borrow History — ${esc(m.name)}`;
-    const content = document.getElementById("member-history-content");
-    if (!history.length) {
-      content.innerHTML =
-        '<p style="color:var(--ink-muted);text-align:center;padding:24px 0">No borrow history for this member.</p>';
-    } else {
-      content.innerHTML = history
-        .map((t) => {
-          const book = this.lib.getBook(t.bookId);
-          const statusClass = t.status;
-          return `<div class="history-item">
-          <div class="txn-icon"><i class="fa-solid fa-book"></i></div>
-          <div class="txn-info">
-            <div class="txn-title">${book ? esc(book.title) : "Unknown"}</div>
-            <div class="txn-sub">Borrowed: ${formatDate(t.borrowDate)} · Due: ${formatDate(t.dueDate)}</div>
-          </div>
-          <span class="status-badge ${statusClass}">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span>
-          ${t.lateFee > 0 ? `<span style="font-size:0.8rem;color:var(--crimson);font-weight:700;">$${t.lateFee}</span>` : ""}
-        </div>`;
-        })
-        .join("");
-    }
-    openModal("history-modal");
-  }
-
-  renderMembers() {
-    const tbody = document.getElementById("members-tbody");
-    if (!tbody) return;
-
-    const search = (
-      document.getElementById("member-search")?.value || ""
-    ).toLowerCase();
-    let members = this.lib.members.filter(
-      (m) =>
-        !search ||
-        m.name.toLowerCase().includes(search) ||
-        m.memberId.toLowerCase().includes(search) ||
-        m.email.toLowerCase().includes(search),
-    );
-
-    if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-users"></i><p>No members found.</p></td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = members
-      .map((m) => {
-        const borrowCount = this.lib.getMemberBorrowCount(m.id);
-        return `<tr>
-        <td><strong>${esc(m.memberId)}</strong></td>
-        <td>
-          <div class="member-cell">
-            <div class="member-avatar">${initials(m.name)}</div>
-            <span class="member-name-cell">${esc(m.name)}</span>
-          </div>
-         </td>
-        <td>${esc(m.email)}</td>
-        <td>${esc(m.phone || "—")}</td>
-        <td>${formatDate(m.membershipDate)}</td>
-        <td>${borrowCount > 0 ? `<span class="status-badge borrowed">${borrowCount} active</span>` : `<span style="color:var(--ink-muted)">None</span>`}</td>
-        <td>
-          <div class="actions-row">
-            <button class="btn-icon" title="View History" onclick="ui._showMemberHistory('${m.id}')"><i class="fa-solid fa-clock-rotate-left"></i></button>
-            <button class="btn-icon" title="Edit" onclick="ui._editMember('${m.id}')"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-icon danger" title="Delete" onclick="ui._deleteMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>
-          </div>
-         </td>
-       </tr>`;
-      })
-      .join("");
-  }
-
-  // -------------------- BORROWING --------------------
-
-  _bindBorrowing() {
-    const openBorrowBtn = document.getElementById("open-borrow-modal");
-    if (openBorrowBtn) {
-      openBorrowBtn.addEventListener("click", () => {
-        this._populateBorrowSelects();
-        const today = todayStr();
-        const borrowDateEl = document.getElementById("borrow-date");
-        const borrowDueEl = document.getElementById("borrow-due");
-        if (borrowDateEl) borrowDateEl.value = today;
-        if (borrowDueEl) borrowDueEl.value = addDays(today, 14);
-        openModal("borrow-modal");
-      });
-    }
-
-    const borrowDateEl = document.getElementById("borrow-date");
-    if (borrowDateEl) {
-      borrowDateEl.addEventListener("change", (e) => {
-        const borrowDueEl = document.getElementById("borrow-due");
-        if (borrowDueEl) borrowDueEl.value = addDays(e.target.value, 14);
-      });
-    }
-
-    const confirmBorrowBtn = document.getElementById("confirm-borrow-btn");
-    if (confirmBorrowBtn) {
-      confirmBorrowBtn.addEventListener("click", () => {
-        const memberId = document.getElementById("borrow-member")?.value;
-        const bookId = document.getElementById("borrow-book")?.value;
-        const borrowDate = document.getElementById("borrow-date")?.value;
-        if (!memberId || !bookId) {
-          showToast("Please select both member and book.", "error");
-          return;
-        }
-        try {
-          const txn = this.lib.borrowBook(memberId, bookId, borrowDate);
-          showToast("Book borrowed successfully!", "success");
-          closeModal("borrow-modal");
-          this.renderAll();
-          this._showReceipt(txn.id);
-        } catch (e) {
-          showToast(e.message, "error");
-        }
-      });
-    }
-
-    // Confirm delete handler
-    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
-    if (confirmDeleteBtn) {
-      confirmDeleteBtn.addEventListener("click", () => {
-        if (this.lib._pendingDeleteFn) {
-          this.lib._pendingDeleteFn();
-          this.lib._pendingDeleteFn = null;
-        }
-        closeModal("confirm-modal");
-      });
-    }
-
-    // Confirm return
-    const confirmReturnBtn = document.getElementById("confirm-return-btn");
-    if (confirmReturnBtn) {
-      confirmReturnBtn.addEventListener("click", () => {
-        const id = document.getElementById("return-txn-id")?.value;
-        if (id) {
-          try {
-            const txn = this.lib.returnBook(id);
-            const fee = txn.lateFee > 0 ? ` Late fee: $${txn.lateFee}` : "";
-            showToast(`Book returned successfully!${fee}`, "success");
-            closeModal("return-modal");
-            this.renderAll();
-          } catch (e) {
-            showToast(e.message, "error");
-          }
-        }
-      });
-    }
-
-    // Confirm renew
-    const confirmRenewBtn = document.getElementById("confirm-renew-btn");
-    if (confirmRenewBtn) {
-      confirmRenewBtn.addEventListener("click", () => {
-        const id = document.getElementById("renew-txn-id")?.value;
-        if (id) {
-          try {
-            this.lib.renewBook(id);
-            showToast("Book renewed for 14 more days!", "success");
-            closeModal("renew-modal");
-            this.renderAll();
-          } catch (e) {
-            showToast(e.message, "error");
-          }
-        }
-      });
-    }
-
-    // Export modal
-    const openExportBtn = document.getElementById("open-export-modal");
-    if (openExportBtn) {
-      openExportBtn.addEventListener("click", () => openModal("export-modal"));
-    }
-  }
-
-  _populateBorrowSelects() {
-    const memberSel = document.getElementById("borrow-member");
-    const bookSel = document.getElementById("borrow-book");
-
-    if (memberSel) {
-      memberSel.innerHTML =
-        '<option value="">— Select Member —</option>' +
-        this.lib.members
-          .map(
-            (m) =>
-              `<option value="${m.id}">${esc(m.memberId)} — ${esc(m.name)}</option>`,
-          )
-          .join("");
-    }
-
-    if (bookSel) {
-      bookSel.innerHTML =
-        '<option value="">— Select Book —</option>' +
-        this.lib.books
-          .filter((b) => b.availableCopies > 0)
-          .map(
-            (b) =>
-              `<option value="${b.id}">${esc(b.title)} by ${esc(b.author)} (${b.availableCopies} avail)</option>`,
-          )
-          .join("");
-    }
-  }
-
-  _openReturnModal(txnId) {
-    const txn = this.lib.transactions.find((t) => t.id === txnId);
-    if (!txn) return;
-    const member = this.lib.getMemberByInternalId(txn.memberId);
-    const book = this.lib.getBook(txn.bookId);
-    const fee = this.lib.calcLateFee(txnId);
-    const today = todayStr();
-
-    const returnDetailsEl = document.getElementById("return-details");
-    const returnTxnIdEl = document.getElementById("return-txn-id");
-
-    if (returnTxnIdEl) returnTxnIdEl.value = txnId;
-    if (returnDetailsEl) {
-      returnDetailsEl.innerHTML = `
-        <div class="return-detail-box">
-          <h3><i class="fa-solid fa-book"></i> ${book ? esc(book.title) : "Unknown"}</h3>
-          <div class="detail-row"><span class="detail-key">Member</span><span class="detail-val">${member ? esc(member.name) : "Unknown"}</span></div>
-          <div class="detail-row"><span class="detail-key">Borrowed On</span><span class="detail-val">${formatDate(txn.borrowDate)}</span></div>
-          <div class="detail-row"><span class="detail-key">Due Date</span><span class="detail-val">${formatDate(txn.dueDate)}</span></div>
-          <div class="detail-row"><span class="detail-key">Return Date</span><span class="detail-val">${formatDate(today)}</span></div>
-        </div>
-        ${
-          fee > 0
-            ? `<div class="late-fee-alert"><i class="fa-solid fa-triangle-exclamation"></i> Late fee: <strong>$${fee.toFixed(2)}</strong> (${daysBetween(txn.dueDate, today)} days overdue @ $0.50/day)</div>`
-            : `<div style="background:var(--sage-light);border-radius:var(--radius-sm);padding:12px 16px;color:var(--sage);font-size:0.88rem;"><i class="fa-solid fa-circle-check"></i> No late fees — returned on time!</div>`
-        }`;
-    }
-    openModal("return-modal");
-  }
-
-  _openRenewModal(txnId) {
-    const txn = this.lib.transactions.find((t) => t.id === txnId);
-    if (!txn) return;
-    const member = this.lib.getMemberByInternalId(txn.memberId);
-    const book = this.lib.getBook(txn.bookId);
-    const newDue = addDays(todayStr(), 14);
-
-    const renewDetailsEl = document.getElementById("renew-details");
-    const renewTxnIdEl = document.getElementById("renew-txn-id");
-
-    if (renewTxnIdEl) renewTxnIdEl.value = txnId;
-    if (renewDetailsEl) {
-      renewDetailsEl.innerHTML = `
-        <div class="return-detail-box">
-          <h3><i class="fa-solid fa-rotate"></i> Renew Book</h3>
-          <div class="detail-row"><span class="detail-key">Book</span><span class="detail-val">${book ? esc(book.title) : "Unknown"}</span></div>
-          <div class="detail-row"><span class="detail-key">Member</span><span class="detail-val">${member ? esc(member.name) : "Unknown"}</span></div>
-          <div class="detail-row"><span class="detail-key">Current Due Date</span><span class="detail-val">${formatDate(txn.dueDate)}</span></div>
-          <div class="detail-row"><span class="detail-key">New Due Date</span><span class="detail-val" style="color:var(--sage)">${formatDate(newDue)}</span></div>
-          <div class="detail-row"><span class="detail-key">Renewals Used</span><span class="detail-val">${txn.renewCount}/1</span></div>
-        </div>`;
-    }
-    openModal("renew-modal");
-  }
-
-  _showReceipt(txnId) {
-    const txn = this.lib.transactions.find((t) => t.id === txnId);
-    if (!txn) return;
-    const member = this.lib.getMemberByInternalId(txn.memberId);
-    const book = this.lib.getBook(txn.bookId);
-    const receiptContent = document.getElementById("receipt-content");
-    if (receiptContent) {
-      receiptContent.innerHTML = `
-        <div class="receipt-title">📚 Bibliotheca</div>
-        <div class="receipt-sub">Library Borrowing Receipt</div>
-        <hr class="receipt-divider"/>
-        <div class="receipt-row"><span>Receipt #</span><span>${esc(txn.id)}</span></div>
-        <div class="receipt-row"><span>Date</span><span>${formatDate(txn.borrowDate)}</span></div>
-        <hr class="receipt-divider"/>
-        <div class="receipt-row"><span>Member</span><span>${member ? esc(member.name) : "—"}</span></div>
-        <div class="receipt-row"><span>Member ID</span><span>${member ? esc(member.memberId) : "—"}</span></div>
-        <hr class="receipt-divider"/>
-        <div class="receipt-row"><span>Book</span><span>${book ? esc(book.title) : "—"}</span></div>
-        <div class="receipt-row"><span>Author</span><span>${book ? esc(book.author) : "—"}</span></div>
-        <div class="receipt-row"><span>ISBN</span><span>${book ? esc(book.isbn) : "—"}</span></div>
-        <hr class="receipt-divider"/>
-        <div class="receipt-row"><span>Borrowed On</span><span>${formatDate(txn.borrowDate)}</span></div>
-        <div class="receipt-row total"><span>Due Date</span><span>${formatDate(txn.dueDate)}</span></div>
-        <hr class="receipt-divider"/>
-        <div class="receipt-row" style="font-size:0.75rem;color:var(--ink-muted)"><span colspan="2">Late fee: $0.50/day after due date. Max 1 renewal allowed.</span></div>`;
-    }
-    openModal("receipt-modal");
-  }
-
-  renderBorrowing() {
-    const tbody = document.getElementById("borrowing-tbody");
-    if (!tbody) return;
-
-    const search = (
-      document.getElementById("borrow-search")?.value || ""
-    ).toLowerCase();
-    let txns = [...this.lib.transactions].sort((a, b) =>
-      b.borrowDate > a.borrowDate ? 1 : -1,
-    );
-
-    if (search) {
-      txns = txns.filter((t) => {
-        const m = this.lib.getMemberByInternalId(t.memberId);
-        const b = this.lib.getBook(t.bookId);
-        return (
-          (m && m.name.toLowerCase().includes(search)) ||
-          (b && b.title.toLowerCase().includes(search))
-        );
-      });
-    }
-
-    if (!txns.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-hand-holding-heart"></i><p>No transactions found.</p></td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = txns
-      .map((t) => {
-        const member = this.lib.getMemberByInternalId(t.memberId);
-        const book = this.lib.getBook(t.bookId);
-        const isOverdue = t.status === "overdue";
-        const isActive = t.status !== "returned";
-        const statusLabel =
-          t.status.charAt(0).toUpperCase() + t.status.slice(1);
-        return `<tr class="${isOverdue ? "overdue-row" : ""}">
-        <td style="font-size:0.75rem;color:var(--ink-muted)">${t.id.slice(-6)}</td>
-        <td>
-          <div class="member-cell">
-            <div class="member-avatar">${member ? initials(member.name) : "?"}</div>
-            <span>${member ? esc(member.name) : "Unknown"}</span>
-          </div>
-        </td>
-        <td><strong>${book ? esc(book.title) : "Unknown"}</strong></td>
-        <td>${formatDate(t.borrowDate)}</td>
-        <td style="${isOverdue ? "color:var(--crimson);font-weight:700" : ""}">${formatDate(t.dueDate)}</td>
-        <td><span class="status-badge ${t.status}">${isOverdue ? '<i class="fa-solid fa-triangle-exclamation"></i> ' : ""}${statusLabel}</span></td>
-        <td>
-          <div class="actions-row">
-            ${isActive ? `<button class="btn btn-sm btn-success" onclick="ui._openReturnModal('${t.id}')"><i class="fa-solid fa-rotate-left"></i> Return</button>` : ""}
-            ${isActive && t.renewCount < 1 ? `<button class="btn btn-sm btn-outline" onclick="ui._openRenewModal('${t.id}')"><i class="fa-solid fa-rotate"></i> Renew</button>` : ""}
-            ${!isActive ? `<button class="btn-icon" title="Print Receipt" onclick="ui._showReceipt('${t.id}')"><i class="fa-solid fa-receipt"></i></button>` : ""}
-          </div>
-        </td>
-      </tr>`;
-      })
-      .join("");
-  }
-
-  renderOverdue() {
-    const tbody = document.getElementById("overdue-tbody");
-    if (!tbody) return;
-
-    const today = todayStr();
-    const overdue = this.lib.getOverdueTransactions();
-
-    if (!overdue.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-circle-check" style="color:var(--sage)"></i><p>No overdue books — great job!</p></td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = overdue
-      .map((t) => {
-        const member = this.lib.getMemberByInternalId(t.memberId);
-        const book = this.lib.getBook(t.bookId);
-        const daysLate = daysBetween(t.dueDate, today);
-        const fee = (daysLate * 0.5).toFixed(2);
-        return `<tr class="overdue-row">
-        <td><div class="member-cell"><div class="member-avatar">${member ? initials(member.name) : "?"}</div><span>${member ? esc(member.name) : "Unknown"}</span></div></td>
-        <td><strong>${book ? esc(book.title) : "Unknown"}</strong></td>
-        <td style="color:var(--crimson);font-weight:700">${formatDate(t.dueDate)}</td>
-        <td><span style="color:var(--crimson);font-weight:700">${daysLate} days</span></td>
-        <td><strong style="color:var(--crimson)">$${fee}</strong></td>
-        <td><button class="btn btn-sm btn-success" onclick="ui._openReturnModal('${t.id}')"><i class="fa-solid fa-rotate-left"></i> Return</button></td>
-      </tr>`;
-      })
-      .join("");
-  }
-
-  // -------------------- DASHBOARD --------------------
-
-  renderDashboard() {
-    const stats = this.lib.getStats();
-    const dashTotalBooks = document.getElementById("dash-total-books");
-    const dashAvailable = document.getElementById("dash-available");
-    const dashMembers = document.getElementById("dash-members");
-    const dashBorrowed = document.getElementById("dash-borrowed");
-    const dashOverdue = document.getElementById("dash-overdue");
-
-    if (dashTotalBooks) dashTotalBooks.textContent = stats.totalBooks;
-    if (dashAvailable) dashAvailable.textContent = stats.available;
-    if (dashMembers) dashMembers.textContent = stats.members;
-    if (dashBorrowed) dashBorrowed.textContent = stats.borrowed;
-    if (dashOverdue) dashOverdue.textContent = stats.overdue;
-
-    this._renderGenreChart();
-    this._renderRecentTransactions();
-  }
-
-  _renderGenreChart() {
-    const container = document.getElementById("genre-chart");
-    if (!container) return;
-
-    const stats = this.lib.getGenreStats();
-    if (!stats.length) {
-      container.innerHTML =
-        '<div class="chart-empty">No borrow data yet.</div>';
-      return;
-    }
-    const max = stats[0][1];
-    container.innerHTML = stats
-      .map(
-        ([genre, count]) => `
-      <div class="chart-bar-row">
-        <div class="chart-label">${esc(genre)}</div>
-        <div class="chart-bar-track">
-          <div class="chart-bar-fill" style="width:${((count / max) * 100).toFixed(0)}%"></div>
-        </div>
-        <div class="chart-count">${count}</div>
-      </div>`,
-      )
-      .join("");
-  }
-
-  _renderRecentTransactions() {
-    const container = document.getElementById("recent-transactions");
-    if (!container) return;
-
-    const recent = [...this.lib.transactions]
-      .sort((a, b) => (b.borrowDate > a.borrowDate ? 1 : -1))
-      .slice(0, 6);
-    if (!recent.length) {
-      container.innerHTML = '<div class="txn-empty">No transactions yet.</div>';
-      return;
-    }
-    container.innerHTML = recent
-      .map((t) => {
-        const m = this.lib.getMemberByInternalId(t.memberId);
-        const b = this.lib.getBook(t.bookId);
-        const icon =
-          t.status === "returned"
-            ? "fa-rotate-left"
-            : t.status === "overdue"
-              ? "fa-triangle-exclamation"
-              : "fa-book";
-        return `<div class="txn-item">
-        <div class="txn-icon"><i class="fa-solid ${icon}"></i></div>
-        <div class="txn-info">
-          <div class="txn-title">${b ? esc(b.title) : "Unknown"}</div>
-          <div class="txn-sub">${m ? esc(m.name) : "Unknown"}</div>
-        </div>
-        <div class="txn-date">${formatDate(t.borrowDate)}</div>
-      </div>`;
-      })
-      .join("");
-  }
-
-  // -------------------- SEARCH --------------------
-
-  _bindSearch() {
-    const bookSearch = document.getElementById("book-search");
-    const genreFilter = document.getElementById("genre-filter");
-    const memberSearch = document.getElementById("member-search");
-    const borrowSearch = document.getElementById("borrow-search");
-
-    if (bookSearch)
-      bookSearch.addEventListener("input", () => this.renderBooks());
-    if (genreFilter)
-      genreFilter.addEventListener("change", () => this.renderBooks());
-    if (memberSearch)
-      memberSearch.addEventListener("input", () => this.renderMembers());
-    if (borrowSearch)
-      borrowSearch.addEventListener("input", () => this.renderBorrowing());
-  }
-
-  // -------------------- MISC --------------------
-
-  _bindMisc() {
-    // ESC key closes modals
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        document
-          .querySelectorAll(".modal-overlay.open")
-          .forEach((m) => m.classList.remove("open"));
-      }
-    });
-  }
+function renewBook(id){
+  let txn=d.transactions.find(t=>t.id==id);if(!txn){toast('Transaction not found','e');return}
+  if(txn.renewCount>=4){toast('Maximum renewals reached','w');return}
+  txn.renewCount=(txn.renewCount||0)+1;let d2=new Date(txn.dueDate);d2.setDate(d2.getDate()+14);
+  txn.dueDate=d2.toISOString().slice(0,10);sv();render(cv);toast('Book renewed: '+txn.bookTitle,'s')
 }
 
-// ============================================================
-// BOOTSTRAP
-// ============================================================
-
-const library = new LibraryManager();
-const ui = new UIController(library);
-
-// Expose for inline onclick
-window.library = library;
-window.ui = ui;
-window.closeModal = closeModal;
+function exportCSV(){
+  let rows=[['ID','Title','Author','ISBN','Genre','Year','Quantity']];
+  d.books.forEach(b=>{rows.push([b.id,b.title,b.author,b.isbn,b.genre,b.year,b.qty])});
+  let csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  let blob=new Blob([csv],{type:'text/csv'});let a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='quantio_books_'+today()+'.csv';document.body.appendChild(a);a.click();
+  a.remove();URL.revokeObjectURL(a.href);toast('CSV exported','s')
+}
+})();

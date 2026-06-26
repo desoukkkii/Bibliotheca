@@ -17,9 +17,9 @@ export default function SortableTh({ col, label, currentCol, currentDir, onSort 
       aria-sort={ariaSort}
       onClick={() => onSort(col)}
     >
-      <span className="inline-flex items-center min-h-[44px] sm:min-h-0">
+      <span className="inline-flex items-center gap-1 py-1">
         {label}
-        <span className="inline-block w-3 ml-1 text-[0.58rem] opacity-25">
+        <span className="inline-block w-3 text-[0.58rem] opacity-25 si">
           <i aria-hidden="true" className="fa-solid fa-sort" />
         </span>
       </span>

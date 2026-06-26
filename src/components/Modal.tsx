@@ -31,18 +31,18 @@ export default function Modal({ isOpen, onClose, title, children, footer, size }
 
   if (!isOpen) return null;
 
+  const maxW = size === "slim" ? "max-w-[360px]" : size === "wide" ? "max-w-[680px]" : "max-w-[500px]";
+
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-bg-fade" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
-        className={`relative bg-white rounded-xl shadow-lg max-h-[calc(100vh-40px)] flex flex-col border border-border animate-modal-pop ${
-          size === "slim" ? "max-w-[360px] w-full" : size === "wide" ? "max-w-[680px] w-full" : "max-w-[500px] w-full"
-        }`}
+        className={`relative bg-white rounded-t-xl sm:rounded-xl shadow-xl max-h-[85vh] sm:max-h-[calc(100vh-40px)] flex flex-col border border-border w-full sm:w-full ${maxW} animate-modal-pop sm:mx-4`}
       >
-        <div className="flex items-center justify-between px-4 sm:px-[22px] py-[14px] sm:py-[18px] border-b border-border shrink-0">
-          <h2 className="text-[0.95rem] font-bold font-heading tracking-tight text-text flex items-center gap-2.5">
+        <div className="flex items-center justify-between px-4 sm:px-[22px] py-3 sm:py-[18px] border-b border-border shrink-0">
+          <h2 className="text-sm sm:text-[0.95rem] font-bold font-heading tracking-tight text-text flex items-center gap-2.5">
             {title}
           </h2>
           <button

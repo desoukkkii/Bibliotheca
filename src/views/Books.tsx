@@ -9,17 +9,6 @@ import SearchBox from "../components/SearchBox";
 import { BtnPrimary, BtnGhost, BtnDanger } from "../components/UI";
 import Modal from "../components/Modal";
 
-const GENRE_COLORS: Record<string, string> = {
-  English: "bg-pink-100 text-pink-700 border-pink-200",
-  Literature: "bg-purple-100 text-purple-700 border-purple-200",
-  Science: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  Mathematics: "bg-blue-100 text-blue-700 border-blue-200",
-  History: "bg-amber-100 text-amber-700 border-amber-200",
-  Technology: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Art: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200",
-  Philosophy: "bg-violet-100 text-violet-700 border-violet-200",
-};
-
 export default function Books() {
   const { state, dispatch, nextId } = useStore();
   const { addToast } = useToast();
@@ -105,33 +94,33 @@ export default function Books() {
   }, []);
 
   return (
-    <div className="animate-fade-slide">
+    <div className="pt-1">
       {/* Header */}
-      <div className="flex items-start sm:items-end justify-between mb-5 sm:mb-7 flex-col sm:flex-row gap-3 sm:gap-4">
+      <div className="flex items-start sm:items-end justify-between flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-7">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-9 h-9 rounded-lg bg-pg flex items-center justify-center text-p shrink-0">
-              <i aria-hidden="true" className="fa-solid fa-book text-sm" />
+          <div className="flex items-center gap-2.5 mb-0.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-pg flex items-center justify-center text-p shrink-0">
+              <i aria-hidden="true" className="fa-solid fa-book text-xs sm:text-sm" />
             </div>
-            <h1 className="text-[1.25rem] sm:text-[1.45rem] font-extrabold font-heading tracking-tight text-text leading-tight">Books</h1>
+            <h1 className="text-xl sm:text-[1.45rem] font-extrabold font-heading tracking-tight text-text leading-tight">Books</h1>
           </div>
-          <p className="text-[0.83rem] text-t3 ml-[45px]">{state.books.length} total titles</p>
+          <p className="text-xs sm:text-[0.83rem] text-t3 ml-10 sm:ml-[45px]">{state.books.length} total titles</p>
         </div>
         <BtnPrimary onClick={openAdd}><i aria-hidden="true" className="fa-solid fa-plus" /> Add Book</BtnPrimary>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+      <div className="flex flex-col gap-3 mb-4 sm:mb-6">
         <SearchBox
           value={vs.search}
           onChange={(v) => setVS((prev) => ({ ...prev, search: v, page: 1 }))}
           placeholder="Search by title, author, or ISBN…"
           label="Search books"
         />
-        <div className="flex gap-1.5 overflow-x-auto pb-1 w-full sm:w-auto scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none -mx-1 px-1">
           <button
             onClick={() => setVS((prev) => ({ ...prev, filter: "", page: 1 }))}
-            className={`px-3 py-[7px] rounded-md text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
+            className={`shrink-0 px-3 py-[7px] rounded-md text-[0.72rem] sm:text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
               !vs.filter ? "bg-pg text-p border-p-border" : "bg-surface text-t2 border-border hover:bg-s3 hover:text-text"
             }`}
           >
@@ -141,7 +130,7 @@ export default function Books() {
             <button
               key={g}
               onClick={() => setVS((prev) => ({ ...prev, filter: prev.filter === g ? "" : g, page: 1 }))}
-              className={`px-3 py-[7px] rounded-md text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
+              className={`shrink-0 px-3 py-[7px] rounded-md text-[0.72rem] sm:text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
                 vs.filter === g ? "bg-pg text-p border-p-border" : "bg-surface text-t2 border-border hover:bg-s3 hover:text-text"
               }`}
             >
@@ -153,16 +142,16 @@ export default function Books() {
 
       {/* Books Grid */}
       {filtered.items.length ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {filtered.items.map((b) => (
             <BookCard key={b.id} book={b} onEdit={openEdit} onDelete={openDel} />
           ))}
         </div>
       ) : (
-        <div className="bg-white border border-border rounded-xl py-16 text-center shadow-xs">
-          <i aria-hidden="true" className="fa-solid fa-book-open text-[2.8rem] opacity-[0.12] block mb-3" />
-          <p className="text-[0.9rem] text-t2 font-medium">No books found</p>
-          <p className="text-[0.78rem] text-t3 mt-1">
+        <div className="bg-white border border-border rounded-xl py-12 sm:py-16 text-center shadow-xs">
+          <i aria-hidden="true" className="fa-solid fa-book-open text-[2rem] sm:text-[2.8rem] opacity-[0.12] block mb-3" />
+          <p className="text-sm sm:text-[0.9rem] text-t2 font-medium">No books found</p>
+          <p className="text-xs sm:text-[0.78rem] text-t3 mt-1">
             {vs.search ? "Try a different search term" : "Click 'Add Book' to get started"}
           </p>
         </div>
@@ -199,8 +188,8 @@ export default function Books() {
             className="input"
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-0.5">
-          <div className="flex flex-col gap-[5px] mb-3.5">
+        <div className="flex flex-col sm:flex-row gap-3 mb-0.5">
+          <div className="flex-1 flex flex-col gap-[5px] mb-3.5">
             <label className="text-[0.7rem] font-bold uppercase tracking-widest text-t3">Author</label>
             <input
               type="text"
@@ -210,7 +199,7 @@ export default function Books() {
               className="input"
             />
           </div>
-          <div className="flex flex-col gap-[5px] mb-3.5">
+          <div className="flex-1 flex flex-col gap-[5px] mb-3.5">
             <label className="text-[0.7rem] font-bold uppercase tracking-widest text-t3">Year</label>
             <input
               type="number"
@@ -222,8 +211,8 @@ export default function Books() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-0.5">
-          <div className="flex flex-col gap-[5px] mb-3.5">
+        <div className="flex flex-col sm:flex-row gap-3 mb-0.5">
+          <div className="flex-1 flex flex-col gap-[5px] mb-3.5">
             <label className="text-[0.7rem] font-bold uppercase tracking-widest text-t3">ISBN</label>
             <input
               type="text"
@@ -233,7 +222,7 @@ export default function Books() {
               className="input"
             />
           </div>
-          <div className="flex flex-col gap-[5px] mb-3.5">
+          <div className="flex-1 flex flex-col gap-[5px] mb-3.5">
             <label className="text-[0.7rem] font-bold uppercase tracking-widest text-t3">Genre</label>
             <select
               value={form.genre}
@@ -285,7 +274,7 @@ export default function Books() {
           </>
         }
       >
-        <p className="text-[0.85rem] text-t2 leading-relaxed">
+        <p className="text-sm sm:text-[0.85rem] text-t2 leading-relaxed">
           Delete <strong className="text-text">"{confirmDel.book?.title || "this book"}"</strong>? This action cannot be undone.
         </p>
       </Modal>

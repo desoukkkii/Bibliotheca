@@ -25,20 +25,20 @@ export default function SearchBox({ value, onChange, placeholder, label, delay =
   }, [local, delay]);
 
   return (
-    <div className="flex-1 min-w-[160px] sm:min-w-[200px] w-full sm:w-auto flex items-center gap-2.5 bg-white border border-border rounded-lg px-3.5 py-[9px] sm:py-[7px] transition-all duration-[0.22s] shadow-xs focus-within:border-p focus-within:shadow-[0_0_0_3px_rgba(79,70,229,0.1)]">
-      <i aria-hidden="true" className="fa-solid fa-magnifying-glass text-t3 text-[0.82rem] shrink-0" />
+    <div className="w-full flex items-center gap-2.5 bg-white border border-border rounded-lg px-3.5 py-[10px] transition-all duration-[0.22s] shadow-xs focus-within:border-p focus-within:shadow-[0_0_0_3px_rgba(79,70,229,0.1)]">
+      <i aria-hidden="true" className="fa-solid fa-magnifying-glass text-t3 text-sm shrink-0" />
       <input
         type="search"
         placeholder={placeholder}
         value={local}
         onChange={(e) => setLocal(e.target.value)}
-        className="border-none outline-none bg-transparent font-sans text-[0.87rem] text-text w-full placeholder:text-t4"
+        className="border-none outline-none bg-transparent font-sans text-sm sm:text-[0.87rem] text-text w-full placeholder:text-t4"
         aria-label={label}
       />
       {local && (
         <button
           onClick={() => { setLocal(""); onChange(""); }}
-          className="bg-transparent border-none text-t3 cursor-pointer hover:text-text transition-colors duration-[0.15s] p-0.5 text-sm"
+          className="bg-transparent border-none text-t3 cursor-pointer hover:text-text transition-colors duration-[0.15s] p-1.5 text-sm min-touch flex items-center justify-center"
           aria-label="Clear search"
         >
           <i aria-hidden="true" className="fa-solid fa-xmark" />

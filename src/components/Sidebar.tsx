@@ -21,7 +21,7 @@ export default function Sidebar({ activeView, onNavigate, onExport }: SidebarPro
   const overdue = overdueCount(state.transactions);
 
   return (
-    <aside className="fixed top-0 left-0 bottom-0 w-[240px] bg-white/95 backdrop-blur-xl border-r border-p/10 flex flex-col z-[100] shadow-sm">
+    <aside className="w-[240px] h-full bg-white/95 backdrop-blur-xl border-r border-p/10 flex flex-col shadow-sm">
       {/* Brand */}
       <div className="h-[64px] flex items-center gap-3 px-5 border-b border-p/10 shrink-0 bg-gradient-to-r from-p/[0.03] to-transparent">
         <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-p to-p-light flex items-center justify-center text-white text-sm shadow-sm ring-1 ring-p/20">
@@ -34,7 +34,7 @@ export default function Sidebar({ activeView, onNavigate, onExport }: SidebarPro
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-3 px-2 sm:px-3 overflow-y-auto overscroll-contain">
+      <nav className="flex-1 py-3 px-3 overflow-y-auto">
         <div className="text-[0.6rem] font-bold uppercase tracking-widest text-t3 px-3 pb-2 pt-1">Main Menu</div>
         {NAV_ITEMS.map((item) => {
           const isActive = activeView === item.view;

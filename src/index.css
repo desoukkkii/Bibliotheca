@@ -66,64 +66,6 @@
   overscroll-behavior: contain;
 }
 
-/* Mobile card table - converts table rows to stacked cards on small screens */
-@media (max-width: 640px) {
-  .card-table thead {
-    display: none;
-  }
-  .card-table tbody,
-  .card-table tbody tr {
-    display: block;
-  }
-  .card-table tbody tr {
-    background: #ffffff;
-    border: 1px solid #e4e6f0;
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 10px;
-    box-shadow: 0 1px 4px rgba(15, 17, 23, 0.07);
-  }
-  .card-table tbody tr td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-    border: none;
-    gap: 8px;
-  }
-  .card-table tbody tr td::before {
-    content: attr(data-label);
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #8e93b0;
-    flex-shrink: 0;
-  }
-  .card-table tbody tr td:last-child {
-    padding-bottom: 0;
-  }
-  .card-table tbody tr td:first-child {
-    padding-top: 0;
-  }
-}
-
-/* Ensure minimum touch target size */
-.min-touch {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Better number input styling on mobile */
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  opacity: 1;
-  height: 24px;
-}
-
 /* Sortable table header styling */
 th.st.asc .si,
 th.st.dsc .si {
@@ -156,6 +98,85 @@ th.st:hover {
 .input:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1), 0 1px 2px rgba(15, 17, 23, 0.05);
+}
+
+/* Mobile card table — converts table rows to stacked cards on <768px */
+@media (max-width: 767px) {
+  .card-table thead {
+    display: none;
+  }
+  .card-table,
+  .card-table tbody,
+  .card-table tbody tr {
+    display: block;
+  }
+  .card-table tbody tr {
+    background: #ffffff;
+    border: 1px solid #e4e6f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(15, 17, 23, 0.06);
+    transition: all 0.2s ease;
+  }
+  .card-table tbody tr:active {
+    transform: scale(0.99);
+  }
+  .card-table tbody tr td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border: none;
+    gap: 10px;
+    font-size: 0.82rem;
+  }
+  .card-table tbody tr td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8e93b0;
+    flex-shrink: 0;
+  }
+  .card-table tbody tr td:last-child {
+    padding-bottom: 0;
+  }
+  .card-table tbody tr td:first-child {
+    padding-top: 0;
+  }
+  .card-table tbody tr td[data-label=""]::before {
+    content: none;
+  }
+  .card-table tbody tr td[data-label="Actions"] {
+    border-top: 1px solid #eef0f8;
+    margin-top: 4px;
+    padding-top: 10px;
+  }
+}
+
+/* Minimum touch target */
+.min-touch {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Better number input styling on mobile */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 24px;
+}
+
+/* Safe area bottom padding for modern phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* Reduced motion */

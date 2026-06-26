@@ -28,7 +28,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className="fixed top-4 right-4 sm:right-4 left-4 sm:left-auto z-[999] flex flex-col gap-2.5 pointer-events-none max-w-[380px] sm:w-full w-auto">
+      <div className="fixed top-3 sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-[999] flex flex-col gap-2.5 pointer-events-none max-w-[380px] sm:w-full">
         {toasts.map((t) => {
           const config: Record<string, { bg: string; text: string; border: string; icon: string; bar: string }> = {
             info: { bg: "bg-white", text: "text-blue-700", border: "border-blue-200", icon: "fa-circle-info", bar: "bg-blue-500" },
@@ -40,13 +40,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
-              className={`flex items-start gap-3 px-3.5 sm:px-4 py-3 rounded-lg ${c.bg} ${c.text} shadow-lg border ${c.border} animate-toast-in pointer-events-auto relative overflow-hidden`}
+              className={`flex items-start gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-3 rounded-lg ${c.bg} ${c.text} shadow-lg border ${c.border} animate-toast-in pointer-events-auto relative overflow-hidden`}
             >
               <i aria-hidden="true" className={`fa-solid ${c.icon} text-sm shrink-0 mt-0.5`} />
-              <span className="text-[0.83rem] font-medium leading-snug">{t.msg}</span>
+              <span className="text-xs sm:text-[0.83rem] font-medium leading-snug flex-1">{t.msg}</span>
               <button
                 onClick={() => removeToast(t.id)}
-                className="ml-auto shrink-0 text-current opacity-40 hover:opacity-100 transition-opacity duration-[0.15s] bg-transparent border-none cursor-pointer p-0.5"
+                className="shrink-0 text-current opacity-40 hover:opacity-100 transition-opacity duration-[0.15s] bg-transparent border-none cursor-pointer p-1 min-touch flex items-center justify-center"
                 aria-label="Dismiss"
               >
                 <i aria-hidden="true" className="fa-solid fa-xmark text-sm" />

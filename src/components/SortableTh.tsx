@@ -9,8 +9,7 @@ interface SortableThProps {
 export default function SortableTh({ col, label, currentCol, currentDir, onSort }: SortableThProps) {
   const isActive = currentCol === col;
   const cls = isActive ? currentDir : "";
-  const DIR_LABEL: Record<string, string> = { asc: "ascending", dsc: "descending" };
-  const ariaSort = isActive && currentDir ? DIR_LABEL[currentDir] : "none";
+  const ariaSort = isActive && currentDir ? (currentDir === "asc" ? "ascending" : "descending") : "none";
 
   return (
     <th

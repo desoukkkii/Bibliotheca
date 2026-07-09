@@ -37,7 +37,7 @@ export default function Modal({ isOpen, onClose, title, children, footer, size }
 
   if (!isOpen) return null;
 
-  const maxW = SIZE_MAP[size] || "max-w-[500px]";
+  const maxW = SIZE_MAP[size ?? "wide"] || "max-w-[500px]";
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center">

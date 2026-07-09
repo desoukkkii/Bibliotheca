@@ -1,4 +1,4 @@
-# Quantio — Library Management System
+# Bibliotheca — Library Management System
 
 A modern, feature-rich library management system built with **React 19 + TypeScript + Tailwind CSS + Vite**.
 
@@ -60,7 +60,9 @@ src/
 │   └── useToast.tsx
 ├── lib/            # Core logic
 │   ├── store.tsx    # Global state (Context + Reducer)
-│   └── utils.ts     # Helpers (sort, paginate, generate data)
+│   ├── utils.ts     # Helpers (sort, paginate, format)
+│   ├── seed.ts      # Seed/mock data
+│   └── nav.ts       # Shared navigation constants
 ├── views/          # Page-level views
 │   ├── Dashboard.tsx
 │   ├── Books.tsx

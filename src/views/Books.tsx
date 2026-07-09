@@ -9,6 +9,19 @@ import SearchBox from "../components/SearchBox";
 import { BtnPrimary, BtnGhost, BtnDanger } from "../components/UI";
 import Modal from "../components/Modal";
 
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 px-3 py-[7px] rounded-md text-[0.72rem] sm:text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
+        active ? "bg-pg text-p border-p-border" : "bg-surface text-t2 border-border hover:bg-s3 hover:text-text"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Books() {
   const { state, dispatch, nextId } = useStore();
   const { addToast } = useToast();
@@ -118,24 +131,15 @@ export default function Books() {
           label="Search books"
         />
         <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none -mx-1 px-1">
-          <button
-            onClick={() => setVS((prev) => ({ ...prev, filter: "", page: 1 }))}
-            className={`shrink-0 px-3 py-[7px] rounded-md text-[0.72rem] sm:text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
-              !vs.filter ? "bg-pg text-p border-p-border" : "bg-surface text-t2 border-border hover:bg-s3 hover:text-text"
-            }`}
-          >
-            All
-          </button>
+          <FilterChip active={!vs.filter} onClick={() => setVS((prev) => ({ ...prev, filter: "", page: 1 }))}>All</FilterChip>
           {genres.map((g) => (
-            <button
+            <FilterChip
               key={g}
+              active={vs.filter === g}
               onClick={() => setVS((prev) => ({ ...prev, filter: prev.filter === g ? "" : g, page: 1 }))}
-              className={`shrink-0 px-3 py-[7px] rounded-md text-[0.72rem] sm:text-[0.75rem] font-semibold transition-all duration-[0.15s] border ${
-                vs.filter === g ? "bg-pg text-p border-p-border" : "bg-surface text-t2 border-border hover:bg-s3 hover:text-text"
-              }`}
             >
               {g}
-            </button>
+            </FilterChip>
           ))}
         </div>
       </div>

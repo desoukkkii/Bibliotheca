@@ -1,21 +1,33 @@
+import { useMemo } from "react";
+
 interface PaginationProps {
   total: number;
   page: number;
   maxPage: number;
   onPageChange: (page: number) => void;
   label?: string;
+  perPage?: number;
 }
 
-export default function Pagination({ total, page, maxPage, onPageChange, label }: PaginationProps) {
-  if (total <= 10) return null;
+const VISIBLE_PAGES = 5;
 
-  const start = Math.max(1, Math.min(page - 2, maxPage - 4));
-  const end = Math.min(maxPage, start + 4);
-  const pages: number[] = [];
-  for (let i = start; i <= end; i++) pages.push(i);
+export default function Pagination({ total, page, maxPage, onPageChange, label, perPage = 10 }: PaginationProps) {
+  const pages = useMemo(() => {
+    const half = Math.floor(VISIBLE_PAGES / 2);
+    let start = Math.max(1, page - half);
+    const end = Math.min(maxPage, start + VISIBLE_PAGES - 1);
+    if (end - start + 1 < VISIBLE_PAGES) {
+      start = Math.max(1, end - VISIBLE_PAGES + 1);
+    }
+    const result: number[] = [];
+    for (let i = start; i <= end; i++) result.push(i);
+    return result;
+  }, [page, maxPage]);
 
-  const from = (page - 1) * 10 + 1;
-  const to = Math.min(page * 10, total);
+  if (total <= perPage) return null;
+
+  const from = (page - 1) * perPage + 1;
+  const to = Math.min(page * perPage, total);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between mt-4 sm:mt-5 gap-3">

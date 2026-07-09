@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
 import type { ToastItem, ToastType } from "../types";
 
 interface ToastContextValue {
@@ -7,10 +7,16 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-let toastId = 0;
+const TOAST_CONFIG: Record<string, { bg: string; text: string; border: string; icon: string; bar: string }> = {
+  info: { bg: "bg-white", text: "text-blue-700", border: "border-blue-200", icon: "fa-circle-info", bar: "bg-blue-500" },
+  s: { bg: "bg-white", text: "text-green-700", border: "border-green-200", icon: "fa-circle-check", bar: "bg-green-500" },
+  e: { bg: "bg-white", text: "text-red-600", border: "border-red-200", icon: "fa-circle-exclamation", bar: "bg-red-500" },
+  w: { bg: "bg-white", text: "text-amber-700", border: "border-amber-200", icon: "fa-triangle-exclamation", bar: "bg-amber-500" },
+};
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const idRef = useRef(0);
 
   const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -18,7 +24,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const addToast = useCallback(
     (msg: string, type: ToastType = "info") => {
-      const id = ++toastId;
+      const id = ++idRef.current;
       setToasts((prev) => [...prev, { id, msg, type }]);
       setTimeout(() => removeToast(id), 3500);
     },
@@ -30,13 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="fixed top-3 sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-[999] flex flex-col gap-2.5 pointer-events-none max-w-[380px] sm:w-full">
         {toasts.map((t) => {
-          const config: Record<string, { bg: string; text: string; border: string; icon: string; bar: string }> = {
-            info: { bg: "bg-white", text: "text-blue-700", border: "border-blue-200", icon: "fa-circle-info", bar: "bg-blue-500" },
-            s: { bg: "bg-white", text: "text-green-700", border: "border-green-200", icon: "fa-circle-check", bar: "bg-green-500" },
-            e: { bg: "bg-white", text: "text-red-600", border: "border-red-200", icon: "fa-circle-exclamation", bar: "bg-red-500" },
-            w: { bg: "bg-white", text: "text-amber-700", border: "border-amber-200", icon: "fa-triangle-exclamation", bar: "bg-amber-500" },
-          };
-          const c = config[t.type] || config.info;
+          const c = TOAST_CONFIG[t.type] || TOAST_CONFIG.info;
           return (
             <div
               key={t.id}

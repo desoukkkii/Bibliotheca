@@ -7,6 +7,24 @@ import Pagination from "../components/Pagination";
 import SortableTh from "../components/SortableTh";
 import { BtnSuccess, BtnIcon } from "../components/UI";
 
+const SEVERITY_LEVELS = [
+  { label: "Critical", days: 30, color: "bg-rg text-r border-r-border", dot: "bg-r" },
+  { label: "High", days: 14, color: "bg-ag text-a border-a-border", dot: "bg-a" },
+  { label: "Moderate", days: 7, color: "bg-cg text-c border-c-border", dot: "bg-c" },
+  { label: "Low", days: 0, color: "bg-gg text-g border-g-border", dot: "bg-g" },
+];
+
+const SEV_COLORS: Record<string, string> = {
+  critical: "bg-rg text-r border-r-border",
+  high: "bg-ag text-a border-a-border",
+  moderate: "bg-cg text-c border-c-border",
+  low: "bg-gg text-g border-g-border",
+};
+
+const SEV_DOTS: Record<string, string> = {
+  critical: "bg-r", high: "bg-a", moderate: "bg-c", low: "bg-g",
+};
+
 export default function Overdue() {
   const { state, dispatch } = useStore();
   const { addToast } = useToast();
@@ -36,6 +54,15 @@ export default function Overdue() {
     let items = applySort(overdueItems, vs.sort);
     return paginate(items, vs.page);
   }, [overdueItems, vs]);
+
+  const severityCounts = useMemo(() => {
+    return SEVERITY_LEVELS.map((sev) => ({
+      ...sev,
+      count: overdueItems.filter(
+        (t) => Math.floor((now.getTime() - new Date(t.dueDate).getTime()) / 86400000) >= sev.days,
+      ).length,
+    }));
+  }, [overdueItems, now]);
 
   const handleSort = useCallback((col: string) => {
     setVS((prev) => ({
@@ -84,23 +111,14 @@ export default function Overdue() {
         <>
           {/* Severity Summary */}
           <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
-            {[
-              { label: "Critical", days: 30, color: "bg-rg text-r border-r-border", dot: "bg-r" },
-              { label: "High", days: 14, color: "bg-ag text-a border-a-border", dot: "bg-a" },
-              { label: "Moderate", days: 7, color: "bg-cg text-c border-c-border", dot: "bg-c" },
-              { label: "Low", days: 0, color: "bg-gg text-g border-g-border", dot: "bg-g" },
-            ].map((sev) => {
-              const count = overdueItems.filter(
-                (t) => Math.floor((now.getTime() - new Date(t.dueDate).getTime()) / 86400000) >= sev.days,
-              ).length;
-              if (!count) return null;
-              return (
+            {severityCounts.map((sev) =>
+              !sev.count ? null : (
                 <div key={sev.label} className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md border text-[0.65rem] sm:text-[0.72rem] font-semibold ${sev.color}`}>
                   <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${sev.dot}`} />
-                  {sev.label}: {count}
+                  {sev.label}: {sev.count}
                 </div>
-              );
-            })}
+              ),
+            )}
           </div>
 
           {/* Table */}
@@ -121,15 +139,6 @@ export default function Overdue() {
                   const days = Math.floor((now.getTime() - new Date(t.dueDate).getTime()) / 86400000);
                   const fee = days * 50;
                   const severity = days >= 30 ? "critical" : days >= 14 ? "high" : days >= 7 ? "moderate" : "low";
-                  const sevColors: Record<string, string> = {
-                    critical: "bg-rg text-r border-r-border",
-                    high: "bg-ag text-a border-a-border",
-                    moderate: "bg-cg text-c border-c-border",
-                    low: "bg-gg text-g border-g-border",
-                  };
-                  const sevDots: Record<string, string> = {
-                    critical: "bg-r", high: "bg-a", moderate: "bg-c", low: "bg-g",
-                  };
                   return (
                     <tr key={t.id} className={`border-b border-border last:border-none transition-all duration-[0.15s] ${i % 2 === 1 ? "bg-s2/40" : ""} hover:bg-[#fef2f2]`}>
                       <td className="px-4 py-3 align-middle" data-label="Book">
@@ -142,8 +151,8 @@ export default function Overdue() {
                         <span className="text-xs sm:text-[0.78rem] text-r font-medium">{t.dueDate}</span>
                       </td>
                       <td className="px-4 py-3 align-middle" data-label="Days Late">
-                        <span className={`inline-flex items-center gap-1.5 text-[0.6rem] sm:text-[0.65rem] font-bold px-2 sm:px-2.5 py-1 rounded-full border ${sevColors[severity]}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${sevDots[severity]}`} />
+                        <span className={`inline-flex items-center gap-1.5 text-[0.6rem] sm:text-[0.65rem] font-bold px-2 sm:px-2.5 py-1 rounded-full border ${SEV_COLORS[severity]}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${SEV_DOTS[severity]}`} />
                           {days} day{days !== 1 ? "s" : ""}
                         </span>
                       </td>

@@ -11,6 +11,12 @@ const COLORS = {
   rose: { bg: "bg-rg", text: "text-r", light: "from-r/10 to-transparent", gradient: "from-r to-r-light" },
 };
 
+const GENRE_GRADIENTS = [
+  "from-p to-p-light", "from-v to-purple-400", "from-cyan-400 to-teal-400",
+  "from-amber-400 to-orange-400", "from-emerald-400 to-teal-400",
+  "from-pink-400 to-rose-400", "from-blue-400 to-indigo-400", "from-fuchsia-400 to-pink-400",
+];
+
 export default function Dashboard() {
   const { state } = useStore();
   const [chartAnimate, setChartAnimate] = useState(false);
@@ -53,12 +59,6 @@ export default function Dashboard() {
   }, [state.books]);
   const genres = Object.keys(genreMap).sort((a, b) => genreMap[b] - genreMap[a]);
   const maxG = Math.max(...Object.values(genreMap), 1);
-
-  const genreGradients = [
-    "from-p to-p-light", "from-v to-purple-400", "from-cyan-400 to-teal-400",
-    "from-amber-400 to-orange-400", "from-emerald-400 to-teal-400",
-    "from-pink-400 to-rose-400", "from-blue-400 to-indigo-400", "from-fuchsia-400 to-pink-400",
-  ];
 
   const dueSoon = useMemo(() => {
     const now = new Date();
@@ -147,7 +147,7 @@ export default function Dashboard() {
                 <div key={g}>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-sm bg-gradient-to-br ${genreGradients[i % genreGradients.length]}`} />
+                      <span className={`w-2.5 h-2.5 rounded-sm bg-gradient-to-br ${GENRE_GRADIENTS[i % GENRE_GRADIENTS.length]}`} />
                       <span className="text-[0.7rem] sm:text-[0.75rem] font-semibold text-t2">{g}</span>
                     </div>
                     <span className="text-[0.7rem] sm:text-[0.75rem] font-bold text-text tabular-nums">{genreMap[g]}</span>

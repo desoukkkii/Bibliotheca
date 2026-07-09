@@ -1,3 +1,5 @@
+export const PER_PAGE = 10;
+
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -29,7 +31,7 @@ export function applySort<T>(items: T[], sort: { col: string; dir: "" | "asc" | 
   return sorter(items, sort.col as keyof T, sort.dir);
 }
 
-export function paginate<T>(items: T[], page: number, perPage: number = 10) {
+export function paginate<T>(items: T[], page: number, perPage: number = PER_PAGE) {
   const total = items.length;
   const maxPage = Math.max(1, Math.ceil(total / perPage));
   const p = Math.min(Math.max(1, page), maxPage);
@@ -40,7 +42,7 @@ export function paginate<T>(items: T[], page: number, perPage: number = 10) {
 export const GENRES = [
   "English", "Literature", "Science", "Mathematics",
   "History", "Technology", "Art", "Philosophy",
-];
+] as const;
 
 export const COVER_GRADIENTS: Record<string, string> = {
   c0: "from-indigo-100 to-indigo-300",

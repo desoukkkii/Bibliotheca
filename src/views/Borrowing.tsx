@@ -9,6 +9,24 @@ import SearchBox from "../components/SearchBox";
 import { BtnPrimary, BtnGhost, BtnIcon } from "../components/UI";
 import Modal from "../components/Modal";
 
+const ST_LABELS: Record<string, string> = {
+  returned: "Returned",
+  borrowed: "On Loan",
+  overdue: "Overdue",
+};
+
+const ST_COLORS: Record<string, string> = {
+  returned: "bg-gg text-g border-g-border",
+  borrowed: "bg-cg text-c border-c-border",
+  overdue: "bg-rg text-r border-r-border",
+};
+
+const ST_DOTS: Record<string, string> = {
+  returned: "bg-g",
+  borrowed: "bg-c",
+  overdue: "bg-r",
+};
+
 export default function Borrowing() {
   const { state, dispatch, nextId } = useStore();
   const { addToast } = useToast();
@@ -183,15 +201,6 @@ export default function Borrowing() {
               filtered.items.map((t, i) => {
                 const isOD = !t.returnDate && new Date(t.dueDate) < now;
                 const st = t.returnDate ? "returned" : isOD ? "overdue" : "borrowed";
-                const stLabel = st === "returned" ? "Returned" : isOD ? "Overdue" : "On Loan";
-                const stColors: Record<string, string> = {
-                  returned: "bg-gg text-g border-g-border",
-                  borrowed: "bg-cg text-c border-c-border",
-                  overdue: "bg-rg text-r border-r-border",
-                };
-                const stDot: Record<string, string> = {
-                  returned: "bg-g", borrowed: "bg-c", overdue: "bg-r",
-                };
                 return (
                   <tr key={t.id} className={`border-b border-border last:border-none transition-all duration-[0.15s] ${isOD ? "bg-[#fef2f2]" : i % 2 === 1 ? "bg-s2/40" : ""} hover:bg-s2`}>
                     <td className="px-4 py-3 align-middle" data-label="Book">
@@ -207,9 +216,9 @@ export default function Borrowing() {
                       <span className="text-xs sm:text-[0.78rem]">{t.dueDate}</span>
                     </td>
                     <td className="px-4 py-3 align-middle" data-label="Status">
-                      <span className={`inline-flex items-center gap-1.5 text-[0.6rem] sm:text-[0.65rem] font-bold px-2 sm:px-2.5 py-1 rounded-full border ${stColors[st] || ""}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${stDot[st] || ""}`} />
-                        {stLabel}
+                      <span className={`inline-flex items-center gap-1.5 text-[0.6rem] sm:text-[0.65rem] font-bold px-2 sm:px-2.5 py-1 rounded-full border ${ST_COLORS[st] || ""}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${ST_DOTS[st] || ""}`} />
+                        {ST_LABELS[st]}
                         {st === "borrowed" && t.renewCount > 0 && (
                           <span className="ml-0.5 opacity-70">×{t.renewCount}</span>
                         )}

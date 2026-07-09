@@ -34,9 +34,11 @@ export interface StoreState {
 
 export type View = "dashboard" | "books" | "members" | "borrowing" | "overdue";
 
+export type SortDir = "" | "asc" | "dsc";
+
 export interface SortState {
   col: string;
-  dir: "" | "asc" | "dsc";
+  dir: SortDir;
 }
 
 export interface ViewState {

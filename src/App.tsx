@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, type FC } from "react";
 import { useStore } from "./lib/store";
 import { ToastProvider, useToast } from "./hooks/useToast";
 import { today, overdueCount, activeBorrows } from "./lib/utils";
+import { NAV_ITEMS } from "./lib/nav";
 import type { View } from "./types";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./views/Dashboard";
@@ -18,13 +19,7 @@ const VIEWS: Record<View, FC> = {
   overdue: Overdue,
 };
 
-const NAV_ITEMS: { view: View; icon: string; label: string }[] = [
-  { view: "dashboard", icon: "fa-chart-pie", label: "Dashboard" },
-  { view: "books", icon: "fa-book", label: "Books" },
-  { view: "members", icon: "fa-users", label: "Members" },
-  { view: "borrowing", icon: "fa-hand-holding-heart", label: "Borrowing" },
-  { view: "overdue", icon: "fa-clock", label: "Overdue" },
-];
+const FOCUSABLE = new Set(["INPUT", "SELECT", "TEXTAREA"]);
 
 function AppContent() {
   const { state } = useStore();
@@ -38,9 +33,7 @@ function AppContent() {
   }, []);
 
   const handleExport = useCallback(() => {
-    const rows = [
-      ["ID", "Title", "Author", "ISBN", "Genre", "Year", "Quantity"],
-    ];
+    const rows = [["ID", "Title", "Author", "ISBN", "Genre", "Year", "Quantity"]];
     state.books.forEach((b) =>
       rows.push([String(b.id), b.title, b.author, b.isbn, b.genre, String(b.year), String(b.qty)]),
     );
@@ -50,7 +43,7 @@ function AppContent() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `quantio_books_${today()}.csv`;
+    a.download = `bibliotheca_books_${today()}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -60,16 +53,12 @@ function AppContent() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !["INPUT", "SELECT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)
-      ) {
-        e.preventDefault();
-        const input = document.querySelector<HTMLInputElement>(
-          `#view-${activeView} input[type="search"]`,
-        );
-        input?.focus();
-      }
+      if (e.key !== "/" || FOCUSABLE.has((e.target as HTMLElement).tagName)) return;
+      e.preventDefault();
+      const input = document.querySelector<HTMLInputElement>(
+        `#view-${activeView} input[type="search"]`,
+      );
+      input?.focus();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -102,7 +91,7 @@ function AppContent() {
             <div className="w-7 h-7 rounded-md bg-gradient-to-br from-p to-p-light flex items-center justify-center text-white text-[0.6rem] shadow-xs">
               <i aria-hidden="true" className="fa-solid fa-book-open-reader" />
             </div>
-            <span className="font-heading font-extrabold text-text text-base leading-none">Quantio</span>
+            <span className="font-heading font-extrabold text-text text-base leading-none">Bibliotheca</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -118,10 +107,7 @@ function AppContent() {
 
       {/* Mobile drawer overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        >
+        <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setSidebarOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-bg-fade" />
         </div>
       )}
@@ -135,7 +121,7 @@ function AppContent() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-p to-p-light flex items-center justify-center text-white text-sm shadow-sm">
               <i aria-hidden="true" className="fa-solid fa-book-open-reader" />
             </div>
-            <span className="font-heading text-lg font-extrabold text-text">Quantio</span>
+            <span className="font-heading text-lg font-extrabold text-text">Bibliotheca</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -153,9 +139,7 @@ function AppContent() {
                 key={item.view}
                 onClick={() => handleNavigate(item.view)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-[0.15s] ${
-                  isActive
-                    ? "bg-pg text-p font-semibold"
-                    : "text-t2 hover:bg-s3 hover:text-text"
+                  isActive ? "bg-pg text-p font-semibold" : "text-t2 hover:bg-s3 hover:text-text"
                 }`}
               >
                 <span className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm shrink-0 ${
@@ -185,7 +169,7 @@ function AppContent() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-text truncate">Admin</div>
-              <div className="text-xs text-t3 truncate">admin@quantio.io</div>
+              <div className="text-xs text-t3 truncate">admin@bibliotheca.app</div>
             </div>
           </div>
         </div>
@@ -235,7 +219,6 @@ function AppContent() {
           );
         })}
       </nav>
-
     </div>
   );
 }

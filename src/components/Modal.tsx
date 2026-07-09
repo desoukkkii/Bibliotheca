@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 interface ModalProps {
@@ -10,28 +10,34 @@ interface ModalProps {
   size?: "wide" | "slim";
 }
 
+const SIZE_MAP: Record<string, string> = {
+  slim: "max-w-[360px]",
+  wide: "max-w-[680px]",
+};
+
 export default function Modal({ isOpen, onClose, title, children, footer, size }: ModalProps) {
   useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
+    if (!isOpen) return;
+    document.body.classList.add("overflow-hidden");
     return () => document.body.classList.remove("overflow-hidden");
   }, [isOpen]);
 
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
+
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
-  const maxW = size === "slim" ? "max-w-[360px]" : size === "wide" ? "max-w-[680px]" : "max-w-[500px]";
+  const maxW = SIZE_MAP[size] || "max-w-[500px]";
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center">

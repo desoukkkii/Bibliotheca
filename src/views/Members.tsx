@@ -8,11 +8,7 @@ import SortableTh from "../components/SortableTh";
 import SearchBox from "../components/SearchBox";
 import { BtnPrimary, BtnGhost, BtnDanger, BtnIcon, BtnIconDanger } from "../components/UI";
 import Modal from "../components/Modal";
-
-const AVATAR_COLORS = [
-  "from-p to-p-light", "from-g to-g-light", "from-c to-c-light",
-  "from-a to-a-light", "from-v to-purple-400", "from-rose-400 to-pink-400",
-];
+import { AVATAR_COLORS } from "../lib/nav";
 
 export default function Members() {
   const { state, dispatch, nextId } = useStore();

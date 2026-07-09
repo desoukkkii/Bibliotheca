@@ -2,13 +2,13 @@ import type { StoreState } from "../types";
 
 const NOW = new Date();
 
-function daysAgo(n: number) {
+function daysAgo(n: number): string {
   const d = new Date(NOW);
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
 }
 
-function futureDays(n: number) {
+function futureDays(n: number): string {
   const d = new Date(NOW);
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);

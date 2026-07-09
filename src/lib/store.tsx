@@ -1,17 +1,18 @@
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from "react";
 import type { Book, Member, Transaction, StoreState } from "../types";
 import { SEED_DATA } from "./seed";
-const STORAGE_KEY = "quantio_library_state";
+
+const STORAGE_KEY = "bibliotheca_state";
 
 function loadData(): StoreState {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    try {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object" && "books" in parsed) return parsed;
-    } catch {
-      /* */
     }
+  } catch {
+    /* empty */
   }
   return SEED_DATA;
 }
@@ -32,19 +33,13 @@ function reducer(state: StoreState, action: Action): StoreState {
     case "ADD_BOOK":
       return { ...state, books: [...state.books, action.payload] };
     case "UPDATE_BOOK":
-      return {
-        ...state,
-        books: state.books.map((b) => (b.id === action.payload.id ? action.payload : b)),
-      };
+      return { ...state, books: state.books.map((b) => (b.id === action.payload.id ? action.payload : b)) };
     case "DELETE_BOOK":
       return { ...state, books: state.books.filter((b) => b.id !== action.payload) };
     case "ADD_MEMBER":
       return { ...state, members: [...state.members, action.payload] };
     case "UPDATE_MEMBER":
-      return {
-        ...state,
-        members: state.members.map((m) => (m.id === action.payload.id ? action.payload : m)),
-      };
+      return { ...state, members: state.members.map((m) => (m.id === action.payload.id ? action.payload : m)) };
     case "DELETE_MEMBER":
       return { ...state, members: state.members.filter((m) => m.id !== action.payload) };
     case "ADD_TRANSACTION":
@@ -85,10 +80,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const nextId = () => {
+  const nextId = useCallback(() => {
     const ids = [...state.books, ...state.members, ...state.transactions].map((x) => x.id);
     return ids.length ? Math.max(...ids) + 1 : 1;
-  };
+  }, [state.books, state.members, state.transactions]);
 
   return (
     <StoreContext.Provider value={{ state, dispatch, nextId }}>
